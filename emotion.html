@@ -664,6 +664,75 @@
   .sensation-chip .chip-icon {
     font-size: 1.1rem;
   }
+  .sensation-chip {
+    position: relative;
+  }
+  .chip-help {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #e2e8f0;
+    color: #64748b;
+    font-size: 0.6rem;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+    transition: all var(--transition);
+    line-height: 1;
+    opacity: 0;
+  }
+  .sensation-chip:hover .chip-help {
+    opacity: 1;
+  }
+  .chip-help:hover {
+    background: var(--primary);
+    color: #fff;
+    transform: scale(1.15);
+  }
+  @media (max-width: 480px) {
+    .chip-help { opacity: 1; }
+  }
+  .chip-tooltip {
+    position: fixed;
+    z-index: 300;
+    background: #1e293b;
+    color: #fff;
+    padding: 12px 16px;
+    border-radius: 12px;
+    font-size: 0.82rem;
+    line-height: 1.6;
+    max-width: 260px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+    animation: tooltipIn 0.2s ease;
+    pointer-events: none;
+  }
+  .chip-tooltip::after {
+    content: '';
+    position: absolute;
+    top: -6px;
+    left: 20px;
+    width: 0;
+    height: 0;
+    border-left: 6px solid transparent;
+    border-right: 6px solid transparent;
+    border-bottom: 6px solid #1e293b;
+  }
+  @keyframes tooltipIn {
+    from { opacity: 0; transform: translateY(5px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .tooltip-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 299;
+  }
 
   /* ── Step 2: Emotion categories ─────────────── */
   .emotion-cat-grid {
@@ -1074,37 +1143,62 @@
   // ── Body sensations ─────────────────────────────
   const BODY_SENSATIONS = [
     // 胸部
-    { id: 'chest_tight',    label: '胸闷',     region: '胸部', icon: '🫀' },
-    { id: 'heart_racing',   label: '心跳快',   region: '胸部', icon: '💓' },
-    { id: 'heart_panic',    label: '心慌',     region: '胸部', icon: '💔' },
-    { id: 'breath_short',   label: '呼吸急促', region: '胸部', icon: '🫁' },
+    { id: 'chest_tight',    label: '胸闷',     region: '胸部', icon: '🫀',
+      desc: '胸口像被什么东西压着，或者有股气堵在那里，呼吸不太顺畅，像穿了一件太紧的衣服。' },
+    { id: 'heart_racing',   label: '心跳快',   region: '胸部', icon: '💓',
+      desc: '心跳扑通扑通的，像刚跑完步，能明显感觉到心脏在跳。可能脸红、手心出汗。' },
+    { id: 'heart_panic',    label: '心慌',     region: '胸部', icon: '💔',
+      desc: '心里突然一阵发虚，像踩空了台阶。说不清怕什么，就是不安。常和心跳快一起出现。' },
+    { id: 'breath_short',   label: '呼吸急促', region: '胸部', icon: '🫁',
+      desc: '呼吸变浅变快，总感觉吸不到底，像刚运动完但实际没动。有时会过度换气。' },
     // 喉咙
-    { id: 'throat_lump',    label: '喉咙堵',   region: '喉咙', icon: '🗣️' },
-    { id: 'throat_dry',     label: '喉咙干',   region: '喉咙', icon: '🏜️' },
-    { id: 'choked_up',      label: '哽咽感',   region: '喉咙', icon: '😢' },
+    { id: 'throat_lump',    label: '喉咙堵',   region: '喉咙', icon: '🗣️',
+      desc: '喉咙像被什么东西哽住了，有话说不出来。鼻子可能有点酸，是快要哭出来的征兆。和哽咽感的区别：堵是持续的，哽咽是一阵一阵往上涌。' },
+    { id: 'throat_dry',     label: '喉咙干',   region: '喉咙', icon: '🏜️',
+      desc: '喉咙发干发涩想喝水，说话多了不舒服，紧张时常见。不像喉咙堵那样想哭，就是单纯干涩。' },
+    { id: 'choked_up',      label: '哽咽感',   region: '喉咙', icon: '😢',
+      desc: '喉咙里有东西往上涌，眼眶发热，下一秒就要哭出来的感觉。声音会变调，是一阵一阵的，而喉咙堵是持续存在的压迫感。' },
     // 肩膀/背部
-    { id: 'shoulder_tight', label: '肩膀紧绷', region: '肩背', icon: '💪' },
-    { id: 'back_heavy',     label: '背部沉重', region: '肩背', icon: '🎒' },
-    { id: 'neck_stiff',     label: '脖子僵硬', region: '肩背', icon: '🧣' },
+    { id: 'shoulder_tight', label: '肩膀紧绷', region: '肩背', icon: '💪',
+      desc: '肩膀不自觉耸起来，像扛着无形重物。按下去酸酸的，提醒自己要放松，但一不注意又耸上去了。' },
+    { id: 'back_heavy',     label: '背部沉重', region: '肩背', icon: '🎒',
+      desc: '后背像背了一个大包，挺直腰板很费力，总想驼着或靠着东西。和疲惫的区别：疲惫是全身没劲，背部沉重集中在背。' },
+    { id: 'neck_stiff',     label: '脖子僵硬', region: '肩背', icon: '🧣',
+      desc: '脖子转动不灵活，转快了会疼，像落枕但没那么严重。是长期绷紧的结果，和肩膀紧绷经常同时出现。' },
     // 胃/腹部
-    { id: 'stomach_upset',  label: '胃不舒服', region: '腹部', icon: '🤢' },
-    { id: 'stomach_knot',   label: '胃绞痛',   region: '腹部', icon: '🪢' },
-    { id: 'empty_feeling',  label: '空落感',   region: '腹部', icon: ' 🕳️' },
-    { id: 'nausea',         label: '恶心',     region: '腹部', icon: '🤮' },
+    { id: 'stomach_upset',  label: '胃不舒服', region: '腹部', icon: '🤢',
+      desc: '胃里闷闷胀胀的，说不上具体怎么不舒服，就是不太对劲。吃不吃东西都没缓解，常见于焦虑和紧张。' },
+    { id: 'stomach_knot',   label: '胃绞痛',   region: '腹部', icon: '🪢',
+      desc: '胃突然一抽一抽地疼，像有东西在里面拧。比「胃不舒服」强烈得多，可能想拉肚子或想吐。' },
+    { id: 'empty_feeling',  label: '空落感',   region: '腹部', icon: '🕳️',
+      desc: '心里或肚子里空空荡荡的，像缺了什么。不是饿了，是一种缺失和空虚感。和悲伤、孤独密切相关。' },
+    { id: 'nausea',         label: '恶心',     region: '腹部', icon: '🤮',
+      desc: '胃里翻江倒海，想吐或反胃。不一定是吃坏东西，情绪紧张害怕也会引起。可能真的会吐，可能不会。' },
     // 头部
-    { id: 'headache',       label: '头胀痛',   region: '头部', icon: '🤕' },
-    { id: 'dizzy',          label: '头晕',     region: '头部', icon: '💫' },
+    { id: 'headache',       label: '头胀痛',   region: '头部', icon: '🤕',
+      desc: '头像被箍紧了，或太阳穴突突跳。胀胀地疼，整个脑袋很重。和头晕的区别：这个是疼，头晕是转或者飘。' },
+    { id: 'dizzy',          label: '头晕',     region: '头部', icon: '💫',
+      desc: '脑子里像有雾，天旋地转或脚下不踏实。低头抬头时更明显。和漂浮感的区别：头晕是转，漂浮感是飘。' },
     // 手脚
-    { id: 'cold_hands',     label: '手脚冰凉', region: '手脚', icon: '❄️' },
-    { id: 'sweaty_hands',   label: '手心出汗', region: '手脚', icon: '💧' },
-    { id: 'trembling',      label: '发抖',     region: '手脚', icon: '🫨' },
-    { id: 'weak_limbs',     label: '四肢无力', region: '手脚', icon: '🦵' },
+    { id: 'cold_hands',     label: '手脚冰凉', region: '手脚', icon: '❄️',
+      desc: '手指脚趾发冷，怎么捂都暖不过来，紧张害怕时尤其明显。和发抖的区别：冷是温度，抖是动作。' },
+    { id: 'sweaty_hands',   label: '手心出汗', region: '手脚', icon: '💧',
+      desc: '手掌湿漉漉黏糊糊的，不热也出汗，紧张时最常见。脸上可能也在出油或出汗。' },
+    { id: 'trembling',      label: '发抖',     region: '手脚', icon: '🫨',
+      desc: '手、腿或全身微微颤抖，控制不住。像紧张到极点的身体反应，也可能因为愤怒。和四肢无力的区别：发抖是抖，无力是软。' },
+    { id: 'weak_limbs',     label: '四肢无力', region: '手脚', icon: '🦵',
+      desc: '手脚像面条一样软，走路像踩棉花，拿东西容易掉。和疲惫的区别：无力集中在四肢，疲惫是全身能量枯竭。' },
     // 全身
-    { id: 'fatigue',        label: '疲惫',     region: '全身', icon: '😴' },
-    { id: 'restless',       label: '躁动不安', region: '全身', icon: '🔥' },
-    { id: 'stiff_body',     label: '浑身僵硬', region: '全身', icon: '🪨' },
-    { id: 'floating',       label: '漂浮感',   region: '全身', icon: '🎈' },
-    { id: 'heavy_body',     label: '身体沉重', region: '全身', icon: '⛓️' },
+    { id: 'fatigue',        label: '疲惫',     region: '全身', icon: '😴',
+      desc: '从头到脚都很累，能量被抽干。不一定是困，而是身心俱疲。和身体沉重的区别：疲惫是没能量，沉重是身体重。' },
+    { id: 'restless',       label: '躁动不安', region: '全身', icon: '🔥',
+      desc: '静不下来，身体里像有一股憋着的劲儿，坐不住想动。和浑身僵硬相反——僵硬是动不了，躁动是停不下来。' },
+    { id: 'stiff_body',     label: '浑身僵硬', region: '全身', icon: '🪨',
+      desc: '全身肌肉都绷着，像一根拉紧的弦，放松不下来。和疲惫的区别：僵硬是肌肉紧张，疲惫是能量不足。' },
+    { id: 'floating',       label: '漂浮感',   region: '全身', icon: '🎈',
+      desc: '像飘在半空，和现实隔了一层雾。做事慢了半拍，看东西像隔了毛玻璃不太真实。和头晕的区别：漂浮是飘忽，头晕是天旋地转。' },
+    { id: 'heavy_body',     label: '身体沉重', region: '全身', icon: '⛓️',
+      desc: '像在水里行走或被灌了铅，每个动作都很费力。不是困也不是没劲，就是沉。和疲惫的区别：沉重感更偏身体层面的"重"，疲惫更多是能量层面的"空"。' },
   ];
 
   // ── Emotion categories (Plutchik's Wheel) ──────
@@ -1446,11 +1540,48 @@
           selectedSensation = s.id;
           modalBody.querySelectorAll('.sensation-chip').forEach(c => c.classList.remove('selected'));
           chip.classList.add('selected');
-          // Enable the next button
           const nextBtn = $('#btnNext1');
           if (nextBtn) nextBtn.disabled = false;
         });
         grid.appendChild(chip);
+
+        // Help button with tooltip
+        if (s.desc) {
+          const helpBtn = document.createElement('button');
+          helpBtn.className = 'chip-help';
+          helpBtn.textContent = '?';
+          helpBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            // Remove any existing tooltip
+            const existing = document.querySelector('.chip-tooltip');
+            if (existing) existing.remove();
+            const existingBackdrop = document.querySelector('.tooltip-backdrop');
+            if (existingBackdrop) existingBackdrop.remove();
+
+            // Create tooltip
+            const tooltip = document.createElement('div');
+            tooltip.className = 'chip-tooltip';
+            tooltip.textContent = s.desc;
+            document.body.appendChild(tooltip);
+
+            // Position tooltip
+            const btnRect = helpBtn.getBoundingClientRect();
+            const top = btnRect.bottom + 6;
+            const left = Math.min(btnRect.left, window.innerWidth - 280);
+            tooltip.style.top = top + 'px';
+            tooltip.style.left = left + 'px';
+
+            // Click anywhere to dismiss
+            const backdrop = document.createElement('div');
+            backdrop.className = 'tooltip-backdrop';
+            backdrop.addEventListener('click', () => {
+              tooltip.remove();
+              backdrop.remove();
+            });
+            document.body.appendChild(backdrop);
+          });
+          chip.appendChild(helpBtn);
+        }
       });
       modalBody.appendChild(grid);
     }

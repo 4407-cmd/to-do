@@ -1,0 +1,2381 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🌊 情绪记录 — 觉察你的内心天气</title>
+<style>
+  :root {
+    --bg-start: #4f46e5;
+    --bg-end:   #7c3aed;
+    --card-bg: #ffffff;
+    --primary: #6366f1;
+    --primary-hover: #4f46e5;
+    --primary-light: #eef2ff;
+    --text: #1e293b;
+    --text-secondary: #64748b;
+    --text-muted: #94a3b8;
+    --border: #e2e8f0;
+    --success: #10b981;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --danger-hover: #dc2626;
+    --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06);
+    --shadow-lg: 0 10px 25px rgba(0,0,0,0.1), 0 4px 10px rgba(0,0,0,0.06);
+    --shadow-xl: 0 20px 50px rgba(0,0,0,0.15);
+    --radius: 16px;
+    --radius-sm: 10px;
+    --radius-xs: 8px;
+    --transition: 0.2s ease;
+
+    /* Emotion category colors */
+    --joy-color: #f59e0b;
+    --sadness-color: #6366f1;
+    --anger-color: #ef4444;
+    --fear-color: #8b5cf6;
+    --surprise-color: #06b6d4;
+    --disgust-color: #84cc16;
+    --trust-color: #10b981;
+    --anticipation-color: #f97316;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    background: linear-gradient(160deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+    background-attachment: fixed;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 20px 16px 60px;
+    color: var(--text);
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+  }
+
+  .app-container {
+    width: 100%;
+    max-width: 520px;
+    margin-top: 12px;
+  }
+
+  /* ── Header ─────────────────────────────────── */
+  .header {
+    text-align: center;
+    margin-bottom: 24px;
+    color: #fff;
+  }
+  .header .icon-row {
+    font-size: 2.8rem;
+    margin-bottom: 4px;
+    animation: float 3s ease-in-out infinite;
+  }
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-6px); }
+  }
+  .header h1 {
+    font-size: 1.8rem;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+    margin-bottom: 4px;
+  }
+  .header .subtitle {
+    font-size: 0.9rem;
+    opacity: 0.8;
+    font-weight: 400;
+  }
+
+  /* ── Tabs ───────────────────────────────────── */
+  .tab-bar {
+    display: flex;
+    background: rgba(255,255,255,0.15);
+    border-radius: 25px;
+    padding: 4px;
+    margin-bottom: 16px;
+    backdrop-filter: blur(10px);
+  }
+  .tab-btn {
+    flex: 1;
+    padding: 10px 16px;
+    border: none;
+    border-radius: 22px;
+    cursor: pointer;
+    font-size: 0.88rem;
+    font-weight: 600;
+    background: transparent;
+    color: rgba(255,255,255,0.75);
+    transition: all var(--transition);
+    white-space: nowrap;
+  }
+  .tab-btn.active {
+    background: #fff;
+    color: var(--primary);
+    box-shadow: var(--shadow);
+  }
+  .tab-btn:hover:not(.active) {
+    color: #fff;
+  }
+
+  /* ── Card ───────────────────────────────────── */
+  .card {
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-lg);
+    overflow: hidden;
+  }
+
+  /* ── Main action button ─────────────────────── */
+  .main-action-area {
+    padding: 28px 24px;
+    text-align: center;
+    border-bottom: 1px solid var(--border);
+  }
+  .btn-record {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 16px 36px;
+    border: none;
+    border-radius: 50px;
+    cursor: pointer;
+    font-size: 1.1rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--primary), #8b5cf6);
+    color: #fff;
+    box-shadow: 0 4px 15px rgba(99, 102, 241, 0.35);
+    transition: all var(--transition);
+  }
+  .btn-record:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(99, 102, 241, 0.45);
+  }
+  .btn-record:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
+  }
+  .btn-record .plus {
+    font-size: 1.4rem;
+    font-weight: 300;
+    line-height: 1;
+  }
+
+  /* ── Timeline ───────────────────────────────── */
+  .timeline {
+    max-height: 420px;
+    overflow-y: auto;
+  }
+  .timeline::-webkit-scrollbar {
+    width: 5px;
+  }
+  .timeline::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 3px;
+  }
+
+  .date-group {
+    padding: 0;
+  }
+  .date-label {
+    padding: 14px 20px 6px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    position: sticky;
+    top: 0;
+    background: #fff;
+    z-index: 1;
+  }
+
+  .entry-item {
+    display: flex;
+    align-items: flex-start;
+    padding: 14px 20px;
+    gap: 14px;
+    border-bottom: 1px solid var(--border);
+    transition: background var(--transition);
+    animation: fadeIn 0.35s ease;
+    cursor: default;
+  }
+  .entry-item:hover {
+    background: #f8fafc;
+  }
+  .entry-item:last-child {
+    border-bottom: none;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes slideOutRight {
+    from { opacity: 1; transform: translateX(0); }
+    to { opacity: 0; transform: translateX(50px); }
+  }
+
+  .entry-emoji {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    flex-shrink: 0;
+    background: #f1f5f9;
+  }
+  .entry-content {
+    flex: 1;
+    min-width: 0;
+  }
+  .entry-chain {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    margin-bottom: 3px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .entry-chain .arrow {
+    color: var(--text-muted);
+  }
+  .entry-chain .specific {
+    font-weight: 700;
+    color: var(--text);
+    font-size: 0.95rem;
+  }
+  .entry-intensity {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-bottom: 2px;
+  }
+  .intensity-dots {
+    display: flex;
+    gap: 2px;
+  }
+  .intensity-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #e2e8f0;
+    transition: background 0.15s;
+  }
+  .intensity-dot.filled {
+    background: var(--primary);
+  }
+  .entry-time {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+  }
+  .entry-context {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin-top: 2px;
+    font-style: italic;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .entry-delete {
+    width: 30px;
+    height: 30px;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+    background: transparent;
+    color: var(--text-muted);
+    flex-shrink: 0;
+    opacity: 0;
+    transition: all var(--transition);
+  }
+  .entry-item:hover .entry-delete {
+    opacity: 1;
+  }
+  .entry-delete:hover {
+    background: #fef2f2;
+    color: var(--danger);
+  }
+
+  /* ── Stats panel ────────────────────────────── */
+  .stats-panel {
+    padding: 20px 24px;
+    display: none;
+  }
+  .stats-panel.active {
+    display: block;
+  }
+  .stat-cards {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .stat-card {
+    background: #f8fafc;
+    border-radius: var(--radius-xs);
+    padding: 16px;
+    text-align: center;
+  }
+  .stat-card .stat-value {
+    font-size: 1.8rem;
+    font-weight: 800;
+    color: var(--primary);
+  }
+  .stat-card .stat-label {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    margin-top: 2px;
+  }
+  .top-emotions {
+    margin-top: 8px;
+  }
+  .top-emotions h3 {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    margin-bottom: 10px;
+    font-weight: 600;
+  }
+  .top-emotion-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 0;
+    font-size: 0.88rem;
+  }
+  .top-emotion-bar-bg {
+    flex: 1;
+    height: 8px;
+    background: #f1f5f9;
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .top-emotion-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--primary), #a78bfa);
+    border-radius: 4px;
+    transition: width 0.5s ease;
+  }
+  .top-emotion-count {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    min-width: 24px;
+    text-align: right;
+  }
+
+  /* ── Report panel ──────────────────────────── */
+  .report-panel {
+    padding: 20px 24px;
+    display: none;
+  }
+  .report-panel.active {
+    display: block;
+  }
+  .report-toggle {
+    display: flex;
+    background: #f1f5f9;
+    border-radius: 22px;
+    padding: 3px;
+    margin-bottom: 20px;
+  }
+  .report-toggle-btn {
+    flex: 1;
+    padding: 8px 14px;
+    border: none;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 0.82rem;
+    font-weight: 600;
+    background: transparent;
+    color: var(--text-secondary);
+    transition: all var(--transition);
+  }
+  .report-toggle-btn.active {
+    background: #fff;
+    color: var(--primary);
+    box-shadow: var(--shadow);
+  }
+  .report-date {
+    text-align: center;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    margin-bottom: 16px;
+  }
+  .report-section {
+    margin-bottom: 20px;
+  }
+  .report-section h3 {
+    font-size: 0.88rem;
+    color: var(--text);
+    margin-bottom: 8px;
+    font-weight: 700;
+  }
+  .report-emotion-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 8px 0;
+  }
+  .report-emotion-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #fff;
+  }
+  .report-chart-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 0;
+    font-size: 0.84rem;
+  }
+  .report-chart-emoji {
+    font-size: 1.2rem;
+    width: 28px;
+    text-align: center;
+  }
+  .report-chart-label {
+    min-width: 50px;
+    font-weight: 600;
+  }
+  .report-chart-bar-bg {
+    flex: 1;
+    height: 22px;
+    background: #f1f5f9;
+    border-radius: 6px;
+    overflow: hidden;
+  }
+  .report-chart-bar {
+    height: 100%;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    padding-left: 8px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: #fff;
+    transition: width 0.6s ease;
+    min-width: fit-content;
+  }
+  .report-chart-count {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    min-width: 20px;
+    text-align: right;
+  }
+  .report-message {
+    background: linear-gradient(135deg, #faf5ff, #f0f9ff);
+    border-radius: var(--radius-xs);
+    padding: 16px;
+    margin: 6px 0;
+    font-size: 0.84rem;
+    color: var(--text);
+    line-height: 1.7;
+    border-left: 3px solid var(--primary);
+  }
+  .report-message.warm {
+    border-left-color: #f59e0b;
+    background: linear-gradient(135deg, #fffbeb, #fefce8);
+  }
+  .report-message.comfort {
+    border-left-color: #8b5cf6;
+    background: linear-gradient(135deg, #f5f3ff, #faf5ff);
+  }
+  .report-empty {
+    text-align: center;
+    padding: 30px 20px;
+    color: var(--text-muted);
+  }
+  .report-empty .icon {
+    font-size: 2.5rem;
+    margin-bottom: 8px;
+  }
+
+  /* ── Empty state ────────────────────────────── */
+  .empty-state {
+    text-align: center;
+    padding: 50px 24px;
+    color: var(--text-secondary);
+    display: none;
+  }
+  .empty-state.show {
+    display: block;
+  }
+  .empty-state .icon {
+    font-size: 3.5rem;
+    margin-bottom: 12px;
+    animation: float 3s ease-in-out infinite;
+  }
+  .empty-state h3 {
+    font-size: 1.1rem;
+    margin-bottom: 6px;
+    color: var(--text);
+  }
+  .empty-state p {
+    font-size: 0.88rem;
+    color: var(--text-muted);
+    line-height: 1.6;
+  }
+
+  /* ── Modal overlay ──────────────────────────── */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 100;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    animation: overlayIn 0.25s ease;
+  }
+  .modal-overlay.hidden {
+    display: none;
+  }
+  @keyframes overlayIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  .modal {
+    background: #fff;
+    border-radius: 20px 20px 0 0;
+    width: 100%;
+    max-width: 520px;
+    max-height: 85vh;
+    display: flex;
+    flex-direction: column;
+    animation: slideUp 0.3s ease;
+    box-shadow: var(--shadow-xl);
+  }
+  @keyframes slideUp {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+  }
+  @media (min-width: 600px) {
+    .modal-overlay {
+      align-items: center;
+    }
+    .modal {
+      border-radius: var(--radius);
+      max-height: 90vh;
+    }
+  }
+
+  .modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 20px 14px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .modal-header h2 {
+    font-size: 1.1rem;
+    font-weight: 700;
+  }
+  .btn-close {
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    background: #f1f5f9;
+    color: var(--text-secondary);
+    transition: all var(--transition);
+  }
+  .btn-close:hover {
+    background: #e2e8f0;
+    color: var(--text);
+  }
+
+  .modal-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px 20px;
+  }
+  .modal-body::-webkit-scrollbar {
+    width: 4px;
+  }
+  .modal-body::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 2px;
+  }
+
+  /* ── Step 1: Body sensation grid ────────────── */
+  .body-region-label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin: 14px 0 8px;
+  }
+  .body-region-label:first-child {
+    margin-top: 0;
+  }
+
+  .sensation-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+    gap: 8px;
+  }
+  .sensation-chip {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 12px;
+    border: 2px solid var(--border);
+    border-radius: var(--radius-xs);
+    cursor: pointer;
+    font-size: 0.85rem;
+    background: #fff;
+    transition: all var(--transition);
+    white-space: nowrap;
+  }
+  .sensation-chip:hover {
+    border-color: #c4b5fd;
+    background: #faf5ff;
+  }
+  .sensation-chip.selected {
+    border-color: var(--primary);
+    background: var(--primary-light);
+    font-weight: 600;
+    box-shadow: 0 0 0 3px rgba(99,102,241,0.15);
+  }
+  .sensation-chip .chip-icon {
+    font-size: 1.1rem;
+  }
+
+  /* ── Step 2: Emotion categories ─────────────── */
+  .emotion-cat-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .emotion-cat-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 16px 10px;
+    border: 2px solid var(--border);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    text-align: center;
+    background: #fff;
+    transition: all var(--transition);
+  }
+  .emotion-cat-card:hover {
+    border-color: #c4b5fd;
+    transform: translateY(-2px);
+    box-shadow: var(--shadow);
+  }
+  .emotion-cat-card.selected {
+    /* border-color and background set dynamically via JS */
+    box-shadow: 0 0 0 4px rgba(99,102,241,0.12);
+  }
+  .emotion-cat-card .cat-emoji {
+    font-size: 2rem;
+  }
+  .emotion-cat-card .cat-label {
+    font-size: 0.9rem;
+    font-weight: 600;
+  }
+  .emotion-cat-card .cat-desc {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    line-height: 1.3;
+  }
+
+  /* ── Step 3: Specific emotion words ─────────── */
+  .intensity-section {
+    margin: 0 0 16px;
+    padding: 14px 16px;
+    background: #f8fafc;
+    border-radius: var(--radius-xs);
+  }
+  .intensity-label-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 6px;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+  }
+  .intensity-value {
+    font-weight: 700;
+    color: var(--primary);
+  }
+  .intensity-slider {
+    width: 100%;
+    -webkit-appearance: none;
+    appearance: none;
+    height: 6px;
+    border-radius: 3px;
+    background: linear-gradient(90deg, #c4b5fd, #ef4444);
+    outline: none;
+  }
+  .intensity-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: #fff;
+    border: 3px solid var(--primary);
+    cursor: pointer;
+    box-shadow: var(--shadow);
+  }
+  .specific-words-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  .word-chip {
+    padding: 10px 8px;
+    border: 2px solid var(--border);
+    border-radius: var(--radius-xs);
+    cursor: pointer;
+    font-size: 0.85rem;
+    text-align: center;
+    background: #fff;
+    transition: all var(--transition);
+    white-space: nowrap;
+  }
+  .word-chip:hover {
+    border-color: #c4b5fd;
+  }
+  .word-chip.selected {
+    border-color: var(--primary);
+    background: var(--primary-light);
+    font-weight: 700;
+    color: var(--primary);
+  }
+  .word-chip.mild {
+    border-left: 3px solid #a78bfa;
+  }
+  .word-chip.moderate {
+    border-left: 3px solid #f59e0b;
+  }
+  .word-chip.intense {
+    border-left: 3px solid #ef4444;
+  }
+  .intensity-legend {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 12px;
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    flex-wrap: wrap;
+  }
+  .intensity-legend span {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .legend-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 2px;
+  }
+  .legend-dot.mild { background: #a78bfa; }
+  .legend-dot.moderate { background: #f59e0b; }
+  .legend-dot.intense { background: #ef4444; }
+
+  .context-input {
+    width: 100%;
+    padding: 12px 14px;
+    border: 2px solid var(--border);
+    border-radius: var(--radius-xs);
+    font-size: 0.9rem;
+    outline: none;
+    font-family: inherit;
+    resize: vertical;
+    min-height: 36px;
+    transition: border-color var(--transition);
+    margin-bottom: 8px;
+  }
+  .context-input:focus {
+    border-color: var(--primary);
+  }
+  .context-input::placeholder {
+    color: #cbd5e1;
+  }
+
+  /* ── Step: Free text fallback ───────────────── */
+  .free-text-hint {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    margin-bottom: 12px;
+    line-height: 1.5;
+  }
+  .free-text-input {
+    width: 100%;
+    padding: 14px;
+    border: 2px solid var(--border);
+    border-radius: var(--radius-xs);
+    font-size: 0.95rem;
+    outline: none;
+    font-family: inherit;
+    resize: vertical;
+    min-height: 100px;
+    transition: border-color var(--transition);
+  }
+  .free-text-input:focus {
+    border-color: var(--primary);
+  }
+
+  /* ── Modal footer (nav buttons) ─────────────── */
+  .modal-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 20px 20px;
+    border-top: 1px solid var(--border);
+    gap: 10px;
+    flex-shrink: 0;
+  }
+  .btn {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 50px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 600;
+    transition: all var(--transition);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+  .btn-back {
+    background: #f1f5f9;
+    color: var(--text-secondary);
+  }
+  .btn-back:hover:not(:disabled) {
+    background: #e2e8f0;
+  }
+  .btn-next {
+    background: var(--primary);
+    color: #fff;
+  }
+  .btn-next:hover:not(:disabled) {
+    background: var(--primary-hover);
+    transform: translateY(-1px);
+  }
+  .btn-save {
+    background: linear-gradient(135deg, var(--success), #059669);
+    color: #fff;
+    font-size: 0.95rem;
+  }
+  .btn-save:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(16,185,129,0.3);
+  }
+  .btn-cant-find {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    cursor: pointer;
+    padding: 8px 12px;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+  .btn-cant-find:hover {
+    color: var(--text-secondary);
+  }
+
+  /* ── Footer bar ─────────────────────────────── */
+  .footer-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 20px;
+    border-top: 1px solid var(--border);
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .footer-stats {
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+  }
+  .btn-export {
+    padding: 7px 14px;
+    border: none;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 0.78rem;
+    font-weight: 500;
+    background: #f1f5f9;
+    color: var(--text-secondary);
+    transition: all var(--transition);
+  }
+  .btn-export:hover {
+    background: #e2e8f0;
+  }
+
+  /* ── Toast ──────────────────────────────────── */
+  .toast {
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    background: #1e293b;
+    color: #fff;
+    padding: 12px 24px;
+    border-radius: 50px;
+    font-size: 0.88rem;
+    font-weight: 600;
+    z-index: 200;
+    transition: transform 0.3s ease;
+    pointer-events: none;
+  }
+  .toast.show {
+    transform: translateX(-50%) translateY(0);
+  }
+
+  /* ── Responsive ─────────────────────────────── */
+  @media (max-width: 480px) {
+    .header h1 { font-size: 1.5rem; }
+    .sensation-grid { grid-template-columns: repeat(3, 1fr); }
+    .emotion-cat-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
+    .emotion-cat-card { padding: 12px 6px; }
+    .emotion-cat-card .cat-emoji { font-size: 1.6rem; }
+    .specific-words-grid { grid-template-columns: repeat(4, 1fr); }
+    .stat-cards { grid-template-columns: 1fr 1fr; }
+    .entry-delete { opacity: 1; }
+    .modal { max-height: 90vh; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app-container">
+  <!-- Header -->
+  <header class="header">
+    <div class="icon-row">🌊</div>
+    <h1>情绪记录</h1>
+    <p class="subtitle">觉察你的内心天气</p>
+  </header>
+
+  <!-- Tab bar -->
+  <div class="tab-bar">
+    <button class="tab-btn active" data-tab="record">📝 记录</button>
+    <button class="tab-btn" data-tab="stats">📊 统计</button>
+    <button class="tab-btn" data-tab="report">📋 报告</button>
+  </div>
+
+  <!-- Main card -->
+  <div class="card">
+    <!-- Record tab content -->
+    <div class="tab-content" id="tab-record">
+      <div class="main-action-area">
+        <button class="btn-record" id="btnStartRecord">
+          <span class="plus">+</span> 记录此刻的感受
+        </button>
+      </div>
+      <div class="timeline" id="timeline"></div>
+      <div class="empty-state show" id="emptyState">
+        <div class="icon">🫧</div>
+        <h3>还没有记录</h3>
+        <p>点击上方按钮<br>开始你的第一次情绪觉察</p>
+      </div>
+    </div>
+
+    <!-- Stats tab content -->
+    <div class="stats-panel" id="tab-stats">
+      <div class="stat-cards">
+        <div class="stat-card">
+          <div class="stat-value" id="statTotal">0</div>
+          <div class="stat-label">总记录</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="statWeekly">0</div>
+          <div class="stat-label">本周记录</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="statAvgIntensity">-</div>
+          <div class="stat-label">平均强度</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="statTopEmotion">-</div>
+          <div class="stat-label">最常见情绪</div>
+        </div>
+      </div>
+      <div class="top-emotions">
+        <h3>📋 情绪出现频次 TOP 5</h3>
+        <div id="topEmotionsList"></div>
+      </div>
+    </div>
+
+    <!-- Report tab content -->
+    <div class="report-panel" id="tab-report">
+      <div class="report-toggle">
+        <button class="report-toggle-btn active" data-period="daily">📅 日报</button>
+        <button class="report-toggle-btn" data-period="weekly">📊 周报</button>
+      </div>
+      <div id="reportContent"></div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer-bar">
+      <span class="footer-stats" id="footerStats">还没有记录</span>
+      <button class="btn-export" id="btnExport">⬇ 导出数据</button>
+    </div>
+  </div>
+</div>
+
+<!-- Recording Modal -->
+<div class="modal-overlay hidden" id="modalOverlay">
+  <div class="modal" id="modal">
+    <div class="modal-header">
+      <h2 id="modalTitle">身体感受</h2>
+      <button class="btn-close" id="btnClose">✕</button>
+    </div>
+
+    <div class="modal-body" id="modalBody"></div>
+    <div class="modal-footer" id="modalFooter"></div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+(function() {
+  'use strict';
+
+  // ═══════════════════════════════════════════════
+  // EMOTION DATA LAYER
+  // ═══════════════════════════════════════════════
+
+  // ── Body sensations ─────────────────────────────
+  const BODY_SENSATIONS = [
+    // 胸部
+    { id: 'chest_tight',    label: '胸闷',     region: '胸部', icon: '🫀' },
+    { id: 'heart_racing',   label: '心跳快',   region: '胸部', icon: '💓' },
+    { id: 'heart_panic',    label: '心慌',     region: '胸部', icon: '💔' },
+    { id: 'breath_short',   label: '呼吸急促', region: '胸部', icon: '🫁' },
+    // 喉咙
+    { id: 'throat_lump',    label: '喉咙堵',   region: '喉咙', icon: '🗣️' },
+    { id: 'throat_dry',     label: '喉咙干',   region: '喉咙', icon: '🏜️' },
+    { id: 'choked_up',      label: '哽咽感',   region: '喉咙', icon: '😢' },
+    // 肩膀/背部
+    { id: 'shoulder_tight', label: '肩膀紧绷', region: '肩背', icon: '💪' },
+    { id: 'back_heavy',     label: '背部沉重', region: '肩背', icon: '🎒' },
+    { id: 'neck_stiff',     label: '脖子僵硬', region: '肩背', icon: '🧣' },
+    // 胃/腹部
+    { id: 'stomach_upset',  label: '胃不舒服', region: '腹部', icon: '🤢' },
+    { id: 'stomach_knot',   label: '胃绞痛',   region: '腹部', icon: '🪢' },
+    { id: 'empty_feeling',  label: '空落感',   region: '腹部', icon: ' 🕳️' },
+    { id: 'nausea',         label: '恶心',     region: '腹部', icon: '🤮' },
+    // 头部
+    { id: 'headache',       label: '头胀痛',   region: '头部', icon: '🤕' },
+    { id: 'dizzy',          label: '头晕',     region: '头部', icon: '💫' },
+    // 手脚
+    { id: 'cold_hands',     label: '手脚冰凉', region: '手脚', icon: '❄️' },
+    { id: 'sweaty_hands',   label: '手心出汗', region: '手脚', icon: '💧' },
+    { id: 'trembling',      label: '发抖',     region: '手脚', icon: '🫨' },
+    { id: 'weak_limbs',     label: '四肢无力', region: '手脚', icon: '🦵' },
+    // 全身
+    { id: 'fatigue',        label: '疲惫',     region: '全身', icon: '😴' },
+    { id: 'restless',       label: '躁动不安', region: '全身', icon: '🔥' },
+    { id: 'stiff_body',     label: '浑身僵硬', region: '全身', icon: '🪨' },
+    { id: 'floating',       label: '漂浮感',   region: '全身', icon: '🎈' },
+    { id: 'heavy_body',     label: '身体沉重', region: '全身', icon: '⛓️' },
+  ];
+
+  // ── Emotion categories (Plutchik's Wheel) ──────
+  // 排序: 正面 → 中性 → 负面
+  const EMOTION_CATEGORIES = [
+    { id: 'joy',           label: '喜悦/开心', emoji: '😊', color: '#f59e0b', valence: 'positive',
+      desc: '开心、满足、兴奋、感恩', keywords: ['开心','高兴','愉快','满足','兴奋','幸福','喜爱'] },
+    { id: 'trust',         label: '信任/安心', emoji: '🤗', color: '#10b981', valence: 'positive',
+      desc: '安心、依赖、接纳、温暖', keywords: ['信任','安心','依赖','接纳','温暖','安全','感动'] },
+    { id: 'anticipation',  label: '期待/警觉', emoji: '🤔', color: '#f97316', valence: 'neutral',
+      desc: '盼望、好奇、警觉、忐忑', keywords: ['期待','盼望','好奇','警觉','希望','忐忑'] },
+    { id: 'surprise',      label: '惊讶/震惊', emoji: '😲', color: '#06b6d4', valence: 'neutral',
+      desc: '震惊、意外、困惑、好奇', keywords: ['惊讶','震惊','意外','困惑','好奇','迷茫'] },
+    { id: 'sadness',       label: '悲伤/难过', emoji: '😢', color: '#6366f1', valence: 'negative',
+      desc: '难过、失落、孤独、遗憾', keywords: ['难过','悲伤','失落','孤独','失望','后悔','委屈'] },
+    { id: 'fear',          label: '恐惧/害怕', emoji: '😨', color: '#8b5cf6', valence: 'negative',
+      desc: '害怕、紧张、焦虑、不安', keywords: ['害怕','恐惧','紧张','焦虑','担心','不安','恐慌'] },
+    { id: 'anger',         label: '愤怒/生气', emoji: '😠', color: '#ef4444', valence: 'negative',
+      desc: '生气、烦躁、不满、愤恨', keywords: ['生气','愤怒','烦躁','恼怒','不满','愤恨'] },
+    { id: 'disgust',       label: '厌恶/反感', emoji: '🤢', color: '#84cc16', valence: 'negative',
+      desc: '反感、嫌弃、厌倦、鄙视', keywords: ['厌恶','反感','嫌弃','恶心','厌倦','鄙视'] },
+  ];
+
+  // ── Specific emotion words (by category, with intensity) ──
+  const SPECIFIC_EMOTIONS = {
+    joy: [
+      { label: '平静', intensity: 2, level: 'mild' },
+      { label: '满足', intensity: 3, level: 'mild' },
+      { label: '愉快', intensity: 4, level: 'mild' },
+      { label: '惬意', intensity: 3, level: 'mild' },
+      { label: '开心', intensity: 5, level: 'moderate' },
+      { label: '欣慰', intensity: 5, level: 'moderate' },
+      { label: '感恩', intensity: 5, level: 'moderate' },
+      { label: '自豪', intensity: 6, level: 'moderate' },
+      { label: '充满希望', intensity: 6, level: 'moderate' },
+      { label: '兴奋', intensity: 7, level: 'intense' },
+      { label: '陶醉', intensity: 7, level: 'intense' },
+      { label: '狂喜', intensity: 9, level: 'intense' },
+      { label: '幸福', intensity: 8, level: 'intense' },
+    ],
+    sadness: [
+      { label: '低落', intensity: 2, level: 'mild' },
+      { label: '遗憾', intensity: 3, level: 'mild' },
+      { label: '怀念', intensity: 3, level: 'mild' },
+      { label: '失望', intensity: 4, level: 'mild' },
+      { label: '难过', intensity: 5, level: 'moderate' },
+      { label: '委屈', intensity: 5, level: 'moderate' },
+      { label: '孤独', intensity: 6, level: 'moderate' },
+      { label: '空虚', intensity: 5, level: 'moderate' },
+      { label: '悲伤', intensity: 6, level: 'moderate' },
+      { label: '心碎', intensity: 8, level: 'intense' },
+      { label: '痛苦', intensity: 8, level: 'intense' },
+      { label: '绝望', intensity: 9, level: 'intense' },
+    ],
+    anger: [
+      { label: '不耐烦', intensity: 2, level: 'mild' },
+      { label: '不满', intensity: 3, level: 'mild' },
+      { label: '烦躁', intensity: 4, level: 'mild' },
+      { label: '恼怒', intensity: 5, level: 'moderate' },
+      { label: '愤恨', intensity: 7, level: 'moderate' },
+      { label: '怨恨', intensity: 7, level: 'moderate' },
+      { label: '嫉妒', intensity: 6, level: 'moderate' },
+      { label: '暴怒', intensity: 9, level: 'intense' },
+      { label: '憎恨', intensity: 8, level: 'intense' },
+      { label: '狂怒', intensity: 10, level: 'intense' },
+    ],
+    fear: [
+      { label: '担心', intensity: 2, level: 'mild' },
+      { label: '紧张', intensity: 3, level: 'mild' },
+      { label: '不安', intensity: 4, level: 'mild' },
+      { label: '焦虑', intensity: 5, level: 'moderate' },
+      { label: '害怕', intensity: 6, level: 'moderate' },
+      { label: '恐慌', intensity: 8, level: 'intense' },
+      { label: '惊恐', intensity: 9, level: 'intense' },
+      { label: '无助', intensity: 7, level: 'intense' },
+      { label: '脆弱', intensity: 5, level: 'moderate' },
+      { label: '不知所措', intensity: 6, level: 'moderate' },
+    ],
+    surprise: [
+      { label: '好奇', intensity: 3, level: 'mild' },
+      { label: '意外', intensity: 4, level: 'mild' },
+      { label: '困惑', intensity: 4, level: 'mild' },
+      { label: '迷茫', intensity: 5, level: 'moderate' },
+      { label: '惊讶', intensity: 5, level: 'moderate' },
+      { label: '震惊', intensity: 7, level: 'intense' },
+      { label: '难以置信', intensity: 8, level: 'intense' },
+      { label: '恍惚', intensity: 6, level: 'moderate' },
+    ],
+    disgust: [
+      { label: '不喜欢', intensity: 2, level: 'mild' },
+      { label: '反感', intensity: 4, level: 'mild' },
+      { label: '嫌弃', intensity: 5, level: 'moderate' },
+      { label: '厌倦', intensity: 5, level: 'moderate' },
+      { label: '恶心', intensity: 6, level: 'moderate' },
+      { label: '鄙视', intensity: 7, level: 'intense' },
+      { label: '憎恶', intensity: 8, level: 'intense' },
+    ],
+    trust: [
+      { label: '安心', intensity: 2, level: 'mild' },
+      { label: '放松', intensity: 2, level: 'mild' },
+      { label: '依赖', intensity: 4, level: 'mild' },
+      { label: '接纳', intensity: 5, level: 'moderate' },
+      { label: '温暖', intensity: 5, level: 'moderate' },
+      { label: '安全', intensity: 4, level: 'moderate' },
+      { label: '感动', intensity: 6, level: 'moderate' },
+      { label: '被爱', intensity: 7, level: 'intense' },
+      { label: '亲密', intensity: 6, level: 'moderate' },
+    ],
+    anticipation: [
+      { label: '好奇', intensity: 3, level: 'mild' },
+      { label: '盼望', intensity: 4, level: 'mild' },
+      { label: '期待', intensity: 5, level: 'moderate' },
+      { label: '忐忑', intensity: 5, level: 'moderate' },
+      { label: '警觉', intensity: 4, level: 'mild' },
+      { label: '急切', intensity: 6, level: 'moderate' },
+      { label: '焦灼等待', intensity: 7, level: 'intense' },
+    ],
+  };
+
+  // ── Body sensation → emotion category mapping ──
+  const BODY_TO_EMOTION = {
+    chest_tight:    ['sadness', 'fear', 'anger'],
+    heart_racing:   ['fear', 'joy', 'anticipation'],
+    heart_panic:    ['fear', 'surprise'],
+    breath_short:   ['fear', 'anger'],
+    throat_lump:    ['sadness', 'fear'],
+    throat_dry:     ['fear', 'anticipation'],
+    choked_up:      ['sadness', 'trust'],
+    shoulder_tight: ['anger', 'fear', 'anticipation'],
+    back_heavy:     ['sadness', 'fear'],
+    neck_stiff:     ['anger', 'fear'],
+    stomach_upset:  ['fear', 'disgust', 'anticipation'],
+    stomach_knot:   ['fear', 'anger'],
+    empty_feeling:  ['sadness', 'fear'],
+    nausea:         ['disgust', 'fear'],
+    headache:       ['anger', 'fear', 'sadness'],
+    dizzy:          ['fear', 'surprise'],
+    cold_hands:     ['fear', 'sadness'],
+    sweaty_hands:   ['fear', 'anticipation'],
+    trembling:      ['fear', 'anger', 'anticipation'],
+    weak_limbs:     ['sadness', 'fear'],
+    fatigue:        ['sadness', 'disgust'],
+    restless:       ['anger', 'fear', 'anticipation'],
+    stiff_body:     ['fear', 'anger'],
+    floating:       ['surprise', 'fear'],
+    heavy_body:     ['sadness', 'fear'],
+  };
+
+  // ═══════════════════════════════════════════════
+  // DOM ELEMENTS
+  // ═══════════════════════════════════════════════
+  const $ = (sel) => document.querySelector(sel);
+  const $$ = (sel) => document.querySelectorAll(sel);
+
+  const btnStartRecord = $('#btnStartRecord');
+  const timeline = $('#timeline');
+  const emptyState = $('#emptyState');
+  const modalOverlay = $('#modalOverlay');
+  const modal = $('#modal');
+  const modalTitle = $('#modalTitle');
+  const modalBody = $('#modalBody');
+  const modalFooter = $('#modalFooter');
+  const btnClose = $('#btnClose');
+  const toast = $('#toast');
+  const footerStats = $('#footerStats');
+  const tabBtns = $$('.tab-btn');
+  const tabRecord = $('#tab-record');
+  const tabStats = $('#tab-stats');
+  const tabReport = $('#tab-report');
+
+  // ═══════════════════════════════════════════════
+  // STATE
+  // ═══════════════════════════════════════════════
+  const STORAGE_KEY = 'emotion-tracker-data';
+  let entries = [];
+  let currentStep = 1;
+  let selectedSensation = null;
+  let selectedCategories = [];   // 多选：情绪大类 id 数组
+  let selectedSpecifics = {};    // { categoryId: 'specificWord' }
+  let intensities = {};          // { categoryId: 5 }
+  let currentMultiIdx = 0;       // 步骤3当前正在编辑的情绪索引
+  let savedContext = '';         // 跨页保持的情境文字
+  let savedNotes = '';           // 跨页保持的备注文字
+
+  // ═══════════════════════════════════════════════
+  // PERSISTENCE
+  // ═══════════════════════════════════════════════
+  function loadEntries() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        entries = JSON.parse(raw);
+        if (!Array.isArray(entries)) entries = [];
+        // Migrate old single-emotion format to new multi-emotion format
+        let migrated = false;
+        entries = entries.map(entry => {
+          if (entry.emotions) return entry; // Already new format
+          if (entry.freeText) {
+            // Migrate old freeText entry
+            migrated = true;
+            return {
+              id: entry.id,
+              timestamp: entry.timestamp,
+              bodySensation: entry.bodySensation || null,
+              emotions: [],
+              context: entry.context || null,
+              notes: entry.notes || null,
+              freeText: true,
+            };
+          }
+          // Migrate old structured entry
+          migrated = true;
+          return {
+            id: entry.id,
+            timestamp: entry.timestamp,
+            bodySensation: entry.bodySensation || null,
+            emotions: [{
+              category: entry.emotionCategory || null,
+              specific: entry.emotionSpecific || null,
+              intensity: entry.intensity || 5,
+            }],
+            context: entry.context || null,
+            notes: entry.notes || null,
+            freeText: false,
+          };
+        });
+        if (migrated) {
+          saveEntries();
+        }
+      } else {
+        entries = [];
+      }
+    } catch (e) {
+      entries = [];
+      showToast('⚠️ 数据读取异常，已重置');
+    }
+  }
+
+  function saveEntries() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
+    } catch (e) {
+      showToast('⚠️ 存储空间不足，请清理旧记录');
+    }
+  }
+
+  function generateId() {
+    return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+  }
+
+  // ═══════════════════════════════════════════════
+  // TOAST
+  // ═══════════════════════════════════════════════
+  let toastTimer;
+  // Global error catcher
+  window.addEventListener('error', (e) => {
+    showToast('⚠️ 出错了: ' + (e.message || '未知错误'));
+    console.error('App error:', e.error);
+  });
+
+  function showToast(msg) {
+    clearTimeout(toastTimer);
+    toast.textContent = msg;
+    toast.classList.add('show');
+    toastTimer = setTimeout(() => toast.classList.remove('show'), 2000);
+  }
+
+  // ═══════════════════════════════════════════════
+  // MODAL MANAGEMENT
+  // ═══════════════════════════════════════════════
+  function openModal() {
+    currentStep = 1;
+    selectedSensation = null;
+    selectedCategories = [];
+    selectedSpecifics = {};
+    intensities = {};
+    currentMultiIdx = 0;
+    savedContext = '';
+    savedNotes = '';
+    modalOverlay.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+    renderStep();
+  }
+
+  function closeModal() {
+    modalOverlay.classList.add('hidden');
+    document.body.style.overflow = '';
+  }
+
+  btnClose.addEventListener('click', closeModal);
+  modalOverlay.addEventListener('click', (e) => {
+    if (e.target === modalOverlay) closeModal();
+  });
+
+  // Escape to close
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !modalOverlay.classList.contains('hidden')) {
+      closeModal();
+    }
+  });
+
+  // ═══════════════════════════════════════════════
+  // STEP RENDERING
+  // ═══════════════════════════════════════════════
+  function renderStep() {
+    switch (currentStep) {
+      case 1: renderStep1(); break;
+      case 2: renderStep2(); break;
+      case 3: renderStep3(); break;
+    }
+  }
+
+  // ── Step 1: Body Sensation ────────────────────
+  function renderStep1() {
+    modalTitle.textContent = '🫀 你身体的哪个部位有感觉？';
+    modalBody.innerHTML = '';
+
+    // Group by region
+    const regions = {};
+    BODY_SENSATIONS.forEach(s => {
+      if (!regions[s.region]) regions[s.region] = [];
+      regions[s.region].push(s);
+    });
+
+    for (const [region, sensations] of Object.entries(regions)) {
+      const regionLabel = document.createElement('div');
+      regionLabel.className = 'body-region-label';
+      regionLabel.textContent = region;
+      modalBody.appendChild(regionLabel);
+
+      const grid = document.createElement('div');
+      grid.className = 'sensation-grid';
+      sensations.forEach(s => {
+        const chip = document.createElement('button');
+        chip.className = 'sensation-chip';
+        if (selectedSensation === s.id) chip.classList.add('selected');
+        chip.innerHTML = `<span class="chip-icon">${s.icon}</span>${s.label}`;
+        chip.addEventListener('click', () => {
+          selectedSensation = s.id;
+          modalBody.querySelectorAll('.sensation-chip').forEach(c => c.classList.remove('selected'));
+          chip.classList.add('selected');
+          // Enable the next button
+          const nextBtn = $('#btnNext1');
+          if (nextBtn) nextBtn.disabled = false;
+        });
+        grid.appendChild(chip);
+      });
+      modalBody.appendChild(grid);
+    }
+
+    modalFooter.innerHTML = `
+      <button class="btn btn-cant-find" id="btnCantFind1">🥺 我说不清身体的感觉...</button>
+      <button class="btn btn-next" id="btnNext1" ${!selectedSensation ? 'disabled' : ''}>
+        下一步 →
+      </button>
+    `;
+
+    $('#btnNext1').addEventListener('click', () => {
+      if (selectedSensation) { currentStep = 2; renderStep(); }
+    });
+    $('#btnCantFind1').addEventListener('click', () => goToFreeText('body'));
+  }
+
+  // ── Step 2: Emotion Category (multi-select) ────
+  function renderStep2() {
+    modalTitle.textContent = '🤔 这个感受更接近哪种情绪？（可多选）';
+    modalBody.innerHTML = '';
+
+    const sensationLabel = BODY_SENSATIONS.find(s => s.id === selectedSensation)?.label || '';
+
+    // Hint text
+    const hint = document.createElement('p');
+    hint.style.cssText = 'font-size:0.82rem;color:var(--text-muted);margin-bottom:6px;text-align:center;';
+    hint.textContent = `你选择了「${sensationLabel}」，可以同时选多个`;
+    modalBody.appendChild(hint);
+
+    const hint2 = document.createElement('p');
+    hint2.style.cssText = 'font-size:0.75rem;color:var(--text-muted);margin-bottom:14px;text-align:center;';
+    hint2.textContent = '比如"又生气又心疼"就是正常的混合情绪';
+    modalBody.appendChild(hint2);
+
+    const grid = document.createElement('div');
+    grid.className = 'emotion-cat-grid';
+
+    function updateNextBtn() {
+      const nextBtn = $('#btnNext2');
+      if (nextBtn) nextBtn.disabled = selectedCategories.length === 0;
+    }
+
+    EMOTION_CATEGORIES.forEach(cat => {
+      const card = document.createElement('button');
+      card.className = 'emotion-cat-card';
+      card.style.position = 'relative';
+
+      const isSelected = selectedCategories.includes(cat.id);
+      if (isSelected) {
+        card.classList.add('selected');
+        card.style.borderColor = cat.color;
+        card.style.background = cat.color + '18';
+        card.style.boxShadow = `0 0 0 4px ${cat.color}30`;
+      }
+
+      card.innerHTML = `
+        <span class="cat-emoji">${cat.emoji}</span>
+        <span class="cat-label">${cat.label}</span>
+        <span class="cat-desc">${cat.desc}</span>
+      `;
+
+      card.addEventListener('click', () => {
+        const idx = selectedCategories.indexOf(cat.id);
+        if (idx >= 0) {
+          // Deselect
+          selectedCategories.splice(idx, 1);
+          card.classList.remove('selected');
+          card.style.borderColor = '';
+          card.style.background = '';
+          card.style.boxShadow = '';
+          // Clean up specifics/intensities for this category
+          delete selectedSpecifics[cat.id];
+          delete intensities[cat.id];
+        } else {
+          // Select
+          selectedCategories.push(cat.id);
+          card.classList.add('selected');
+          card.style.borderColor = cat.color;
+          card.style.background = cat.color + '18';
+          card.style.boxShadow = `0 0 0 4px ${cat.color}30`;
+        }
+        updateNextBtn();
+      });
+      grid.appendChild(card);
+    });
+    modalBody.appendChild(grid);
+    modalFooter.innerHTML = `
+      <button class="btn btn-back" id="btnBack2">← 上一步</button>
+      <button class="btn btn-cant-find" id="btnCantFind2">🥺 我找不到合适的...</button>
+      <button class="btn btn-next" id="btnNext2" ${selectedCategories.length === 0 ? 'disabled' : ''}>
+        下一步 →
+      </button>
+    `;
+
+    $('#btnBack2').addEventListener('click', () => { currentStep = 1; renderStep(); });
+    $('#btnNext2').addEventListener('click', () => {
+      if (selectedCategories.length > 0) {
+        currentMultiIdx = 0;
+        currentStep = 3;
+        renderStep();
+      }
+    });
+    $('#btnCantFind2').addEventListener('click', () => goToFreeText('category'));
+  }
+
+  // ── Step 3: Specific Emotion Words (multi) ─────
+  function renderStep3() {
+    const total = selectedCategories.length;
+    const catId = selectedCategories[currentMultiIdx];
+    const cat = EMOTION_CATEGORIES.find(c => c.id === catId);
+    const words = SPECIFIC_EMOTIONS[catId] || [];
+    const prevSpecific = selectedSpecifics[catId] || null;
+    const prevIntensity = intensities[catId] || 5;
+
+    modalTitle.textContent = `🎯 精准命名 (${currentMultiIdx + 1}/${total})`;
+    modalBody.innerHTML = '';
+
+    // Current category label
+    const catLabel = document.createElement('div');
+    catLabel.style.cssText = `text-align:center;font-size:1.1rem;font-weight:700;color:${cat.color};margin-bottom:12px;`;
+    catLabel.textContent = `${cat.emoji} ${cat.label}`;
+    modalBody.appendChild(catLabel);
+
+    // Intensity slider section
+    const intensitySection = document.createElement('div');
+    intensitySection.className = 'intensity-section';
+    intensitySection.innerHTML = `
+      <div class="intensity-label-row">
+        <span>强度很轻</span>
+        <span class="intensity-value" id="intensityValue">${prevIntensity}</span>
+        <span>非常强烈</span>
+      </div>
+      <input type="range" min="1" max="10" value="${prevIntensity}" class="intensity-slider" id="intensitySlider">
+    `;
+    modalBody.appendChild(intensitySection);
+
+    // Legend
+    const legend = document.createElement('div');
+    legend.className = 'intensity-legend';
+    legend.innerHTML = `
+      <span><span class="legend-dot mild"></span> 轻度</span>
+      <span><span class="legend-dot moderate"></span> 中度</span>
+      <span><span class="legend-dot intense"></span> 强烈</span>
+    `;
+    modalBody.appendChild(legend);
+
+    // Word grid
+    const grid = document.createElement('div');
+    grid.className = 'specific-words-grid';
+    words.forEach(w => {
+      const chip = document.createElement('button');
+      chip.className = `word-chip ${w.level}`;
+      if (prevSpecific === w.label) chip.classList.add('selected');
+      chip.textContent = w.label;
+      chip.addEventListener('click', () => {
+        selectedSpecifics[catId] = w.label;
+        intensities[catId] = w.intensity;
+        $('#intensitySlider').value = w.intensity;
+        $('#intensityValue').textContent = w.intensity;
+        grid.querySelectorAll('.word-chip').forEach(c => c.classList.remove('selected'));
+        chip.classList.add('selected');
+        updateSaveBtn();
+      });
+      grid.appendChild(chip);
+    });
+    modalBody.appendChild(grid);
+
+    // Context & notes (only on last category page)
+    if (currentMultiIdx === total - 1) {
+      const contextLabel = document.createElement('p');
+      contextLabel.style.cssText = 'font-size:0.82rem;color:var(--text-secondary);margin:16px 0 6px;font-weight:600;';
+      contextLabel.textContent = '📋 触发情境（可选）';
+      modalBody.appendChild(contextLabel);
+
+      const contextInput = document.createElement('input');
+      contextInput.type = 'text';
+      contextInput.className = 'context-input';
+      contextInput.placeholder = '发生了什么？';
+      contextInput.id = 'contextInput';
+      contextInput.value = savedContext;
+      contextInput.addEventListener('input', () => { savedContext = contextInput.value; });
+      modalBody.appendChild(contextInput);
+
+      const notesLabel = document.createElement('p');
+      notesLabel.style.cssText = 'font-size:0.82rem;color:var(--text-secondary);margin:12px 0 6px;font-weight:600;';
+      notesLabel.textContent = '📝 更多想说的（可选）';
+      modalBody.appendChild(notesLabel);
+
+      const notesInput = document.createElement('textarea');
+      notesInput.className = 'context-input';
+      notesInput.placeholder = '自由记录...';
+      notesInput.rows = 2;
+      notesInput.id = 'notesInput';
+      notesInput.value = savedNotes;
+      notesInput.addEventListener('input', () => { savedNotes = notesInput.value; });
+      modalBody.appendChild(notesInput);
+    } else {
+      const hint = document.createElement('p');
+      hint.style.cssText = 'font-size:0.75rem;color:var(--text-muted);text-align:center;margin-top:12px;';
+      hint.textContent = '选好这个词后，继续填写下一个情绪';
+      modalBody.appendChild(hint);
+    }
+
+    // Intensity slider event
+    setTimeout(() => {
+      const slider = $('#intensitySlider');
+      if (slider) {
+        slider.addEventListener('input', () => {
+          intensities[catId] = parseInt(slider.value);
+          $('#intensityValue').textContent = intensities[catId];
+          if (selectedSpecifics[catId]) {
+            const matchingWord = words.find(w => w.intensity === intensities[catId] && w.label === selectedSpecifics[catId]);
+            if (!matchingWord) {
+              selectedSpecifics[catId] = null;
+              grid.querySelectorAll('.word-chip').forEach(c => c.classList.remove('selected'));
+              updateSaveBtn();
+            }
+          }
+        });
+      }
+    }, 0);
+
+    function updateSaveBtn() {
+      const saveBtn = $('#btnSave');
+      if (!saveBtn) return;
+      // Enable save only when ALL categories have a specific word
+      const allDone = selectedCategories.every(id => selectedSpecifics[id]);
+      saveBtn.disabled = !allDone;
+    }
+
+    // Navigation between categories
+    const navHtml = [];
+    if (currentMultiIdx > 0) {
+      navHtml.push(`<button class="btn btn-back" id="btnPrevCat">← 上一个情绪</button>`);
+    }
+    navHtml.push(`<button class="btn btn-cant-find" id="btnCantFind3">🥺 找不到合适的词...</button>`);
+    if (currentMultiIdx < total - 1) {
+      navHtml.push(`<button class="btn btn-next" id="btnNextCat">下一个情绪 →</button>`);
+    }
+    navHtml.push(`<button class="btn btn-save" id="btnSave" ${!selectedCategories.every(id => selectedSpecifics[id]) ? 'disabled' : ''}>💾 保存记录</button>`);
+
+    modalFooter.innerHTML = navHtml.join('');
+
+    if (currentMultiIdx > 0) {
+      $('#btnPrevCat').addEventListener('click', () => { currentMultiIdx--; renderStep(); });
+    }
+    if (currentMultiIdx < total - 1) {
+      $('#btnNextCat').addEventListener('click', () => { currentMultiIdx++; renderStep(); });
+    }
+    $('#btnSave').addEventListener('click', () => {
+      // Collect context/notes before saving (only on last render)
+      saveRecord();
+    });
+    $('#btnCantFind3').addEventListener('click', () => goToFreeText('specific'));
+  }
+
+  // ── Free text fallback ────────────────────────
+  function goToFreeText(fromStep) {
+    modalTitle.textContent = '💭 用你自己的话描述';
+    modalBody.innerHTML = `
+      <p class="free-text-hint">
+        没关系，觉察情绪本来就需要练习。<br>
+        试着用你自己的话描述一下身体的感觉和内心的感受吧：
+      </p>
+      <textarea class="free-text-input" id="freeTextInput" placeholder="比如：胸口闷闷的，感觉有什么东西压着，可能跟今天早上发生的那件事有关..."></textarea>
+    `;
+    modalFooter.innerHTML = `
+      <button class="btn btn-back" id="btnBackFree">← 返回选择</button>
+      <button class="btn btn-save" id="btnSaveFree">💾 保存记录</button>
+    `;
+
+    $('#btnBackFree').addEventListener('click', () => {
+      if (fromStep === 'body') currentStep = 1;
+      else if (fromStep === 'category') currentStep = 2;
+      else currentStep = 3;
+      renderStep();
+    });
+    $('#btnSaveFree').addEventListener('click', () => {
+      const text = $('#freeTextInput')?.value?.trim();
+      if (!text) {
+        showToast('请至少写一点内容再保存');
+        return;
+      }
+      const sensationLabel = selectedSensation ? BODY_SENSATIONS.find(s => s.id === selectedSensation)?.label : null;
+      entries.unshift({
+        id: generateId(),
+        timestamp: Date.now(),
+        bodySensation: sensationLabel,
+        emotions: [],
+        context: null,
+        notes: text,
+        freeText: true,
+      });
+      saveEntries();
+      closeModal();
+      renderAll();
+      showToast('✅ 已保存！每一次觉察都是进步');
+    });
+  }
+
+  // ── Save record ───────────────────────────────
+  function saveRecord() {
+    if (selectedCategories.length === 0) return;
+
+    const sensation = BODY_SENSATIONS.find(s => s.id === selectedSensation);
+    const contextVal = savedContext.trim() || null;
+    const notesVal = savedNotes.trim() || null;
+
+    const emotions = selectedCategories.map(catId => {
+      const cat = EMOTION_CATEGORIES.find(c => c.id === catId);
+      return {
+        category: cat?.label || catId,
+        specific: selectedSpecifics[catId] || null,
+        intensity: intensities[catId] || 5,
+      };
+    });
+
+    entries.unshift({
+      id: generateId(),
+      timestamp: Date.now(),
+      bodySensation: sensation?.label || null,
+      emotions: emotions,
+      context: contextVal,
+      notes: notesVal,
+      freeText: false,
+    });
+
+    saveEntries();
+    closeModal();
+    renderAll();
+    showToast('✅ 已保存！你越来越了解自己了');
+  }
+
+  // ═══════════════════════════════════════════════
+  // TIMELINE RENDERING
+  // ═══════════════════════════════════════════════
+  function renderTimeline() {
+    timeline.innerHTML = '';
+
+    if (entries.length === 0) {
+      emptyState.classList.add('show');
+      timeline.style.display = 'none';
+      return;
+    }
+
+    emptyState.classList.remove('show');
+    timeline.style.display = '';
+
+    // Group by date
+    const groups = {};
+    entries.forEach(entry => {
+      const date = new Date(entry.timestamp);
+      const dateKey = `${date.getFullYear()}/${date.getMonth()+1}/${date.getDate()}`;
+      if (!groups[dateKey]) groups[dateKey] = [];
+      groups[dateKey].push(entry);
+    });
+
+    for (const [dateKey, groupEntries] of Object.entries(groups)) {
+      const dateGroup = document.createElement('div');
+      dateGroup.className = 'date-group';
+
+      const dateLabel = document.createElement('div');
+      dateLabel.className = 'date-label';
+
+      // Friendly date label
+      const today = new Date();
+      const groupDate = new Date(groupEntries[0].timestamp);
+      const todayKey = `${today.getFullYear()}/${today.getMonth()+1}/${today.getDate()}`;
+      const yesterday = new Date(today);
+      yesterday.setDate(yesterday.getDate() - 1);
+      const yesterdayKey = `${yesterday.getFullYear()}/${yesterday.getMonth()+1}/${yesterday.getDate()}`;
+
+      if (dateKey === todayKey) {
+        dateLabel.textContent = '📌 今天';
+      } else if (dateKey === yesterdayKey) {
+        dateLabel.textContent = '📌 昨天';
+      } else {
+        const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
+        const wd = weekdays[groupDate.getDay()];
+        dateLabel.textContent = `${dateKey} 星期${wd}`;
+      }
+      dateGroup.appendChild(dateLabel);
+
+      groupEntries.forEach(entry => {
+        dateGroup.appendChild(createEntryElement(entry));
+      });
+
+      timeline.appendChild(dateGroup);
+    }
+  }
+
+  function createEntryElement(entry) {
+    const item = document.createElement('div');
+    item.className = 'entry-item';
+
+    const time = new Date(entry.timestamp);
+    const timeStr = `${String(time.getHours()).padStart(2,'0')}:${String(time.getMinutes()).padStart(2,'0')}`;
+
+    // Migrate old format on the fly
+    const emotions = entry.emotions || [];
+    const isOldFormat = !entry.emotions && (entry.emotionCategory || entry.emotionSpecific);
+
+    let contentHTML = '';
+
+    if (entry.freeText) {
+      // Free text entry
+      contentHTML = `
+        <div class="entry-chain"><span class="specific">💭 自由记录</span></div>
+        <div class="entry-time">${timeStr}</div>
+        ${entry.notes ? `<div class="entry-context">📝 ${escapeHTML(entry.notes)}</div>` : ''}
+      `;
+    } else if (isOldFormat) {
+      // Old single-emotion format
+      const cat = EMOTION_CATEGORIES.find(c => c.label === entry.emotionCategory);
+      contentHTML = buildEmotionRow(entry.bodySensation, entry.emotionCategory, entry.emotionSpecific, entry.intensity || 5, cat);
+      contentHTML += `<div class="entry-time">${timeStr}</div>`;
+      if (entry.context) contentHTML += `<div class="entry-context">💬 ${escapeHTML(entry.context)}</div>`;
+      if (entry.notes) contentHTML += `<div class="entry-context">📝 ${escapeHTML(entry.notes)}</div>`;
+    } else {
+      // New multi-emotion format
+      emotions.forEach((em, idx) => {
+        const cat = EMOTION_CATEGORIES.find(c => c.label === em.category);
+        contentHTML += buildEmotionRow(
+          idx === 0 ? entry.bodySensation : null,
+          em.category,
+          em.specific,
+          em.intensity || 5,
+          cat
+        );
+      });
+      contentHTML += `<div class="entry-time">${timeStr}</div>`;
+      if (entry.context) contentHTML += `<div class="entry-context">💬 ${escapeHTML(entry.context)}</div>`;
+      if (entry.notes) contentHTML += `<div class="entry-context">📝 ${escapeHTML(entry.notes)}</div>`;
+    }
+
+    // Display emoji from first emotion
+    let displayEmoji = '💭';
+    if (!entry.freeText && emotions.length > 0) {
+      const firstCat = EMOTION_CATEGORIES.find(c => c.label === emotions[0].category);
+      if (firstCat) displayEmoji = firstCat.emoji;
+    }
+
+    item.innerHTML = `
+      <div class="entry-emoji">${displayEmoji}</div>
+      <div class="entry-content">${contentHTML}</div>
+      <button class="entry-delete" data-id="${entry.id}" title="删除">🗑️</button>
+    `;
+
+    const deleteBtn = item.querySelector('.entry-delete');
+    deleteBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      deleteEntry(entry.id, item);
+    });
+
+    return item;
+  }
+
+  function buildEmotionRow(bodySensation, categoryLabel, specific, intensity, catObj) {
+    let chainHTML = '';
+    const parts = [];
+    if (bodySensation) parts.push(bodySensation);
+    if (categoryLabel) parts.push(categoryLabel);
+    chainHTML = parts.join(' <span class="arrow">→</span> ');
+    if (specific) {
+      chainHTML += ` <span class="arrow">→</span> <span class="specific">${specific}</span>`;
+    }
+
+    let dotsHTML = '';
+    for (let i = 1; i <= 10; i++) {
+      dotsHTML += `<span class="intensity-dot${i <= intensity ? ' filled' : ''}"></span>`;
+    }
+
+    const catColor = catObj ? catObj.color : 'var(--primary)';
+
+    return `
+      <div class="entry-chain">${chainHTML}</div>
+      <div class="entry-intensity">
+        <span>强度:</span>
+        <span class="intensity-dots">${dotsHTML}</span>
+        <span>${intensity}</span>
+      </div>
+    `;
+  }
+
+  function escapeHTML(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  function deleteEntry(id, element) {
+    element.style.animation = 'slideOutRight 0.25s ease forwards';
+    element.addEventListener('animationend', () => {
+      entries = entries.filter(e => e.id !== id);
+      saveEntries();
+      renderAll();
+    }, { once: true });
+  }
+
+  // ═══════════════════════════════════════════════
+  // STATS RENDERING
+  // ═══════════════════════════════════════════════
+  function getEntryEmotions(entry) {
+    // Normalize old & new format into a flat list of {specific, category}
+    if (entry.freeText) return [];
+    if (entry.emotions && entry.emotions.length > 0) {
+      return entry.emotions.map(em => ({
+        specific: em.specific || em.category,
+        category: em.category,
+        intensity: em.intensity || 5,
+      }));
+    }
+    // Old format
+    if (entry.emotionCategory || entry.emotionSpecific) {
+      return [{
+        specific: entry.emotionSpecific || entry.emotionCategory,
+        category: entry.emotionCategory,
+        intensity: entry.intensity || 5,
+      }];
+    }
+    return [];
+  }
+
+  function renderStats() {
+    if (!tabStats.classList.contains('active')) return;
+
+    // Total
+    $('#statTotal').textContent = entries.length;
+
+    // Weekly
+    const now = new Date();
+    const weekStart = new Date(now);
+    weekStart.setDate(now.getDate() - now.getDay());
+    weekStart.setHours(0,0,0,0);
+    const weeklyCount = entries.filter(e => e.timestamp >= weekStart.getTime()).length;
+    $('#statWeekly').textContent = weeklyCount;
+
+    // Average intensity (all emotions across all entries)
+    let allIntensities = [];
+    entries.forEach(e => {
+      const ems = getEntryEmotions(e);
+      ems.forEach(em => { if (em.intensity) allIntensities.push(em.intensity); });
+    });
+    if (allIntensities.length > 0) {
+      const avgIntensity = allIntensities.reduce((a, b) => a + b, 0) / allIntensities.length;
+      $('#statAvgIntensity').textContent = avgIntensity.toFixed(1);
+    } else {
+      $('#statAvgIntensity').textContent = '-';
+    }
+
+    // Emotion frequency counts (by specific word)
+    const emotionCounts = {};
+    entries.forEach(e => {
+      const ems = getEntryEmotions(e);
+      if (ems.length === 0 && e.freeText) {
+        emotionCounts['自由记录'] = (emotionCounts['自由记录'] || 0) + 1;
+      }
+      ems.forEach(em => {
+        const key = em.specific || em.category || '未知';
+        emotionCounts[key] = (emotionCounts[key] || 0) + 1;
+      });
+    });
+    const topEmotion = Object.entries(emotionCounts).sort((a,b) => b[1] - a[1])[0];
+    $('#statTopEmotion').textContent = topEmotion ? topEmotion[0] : '-';
+
+    // Top 5 list
+    const top5 = Object.entries(emotionCounts).sort((a,b) => b[1] - a[1]).slice(0, 5);
+    const maxCount = top5[0] ? top5[0][1] : 1;
+    const topList = $('#topEmotionsList');
+    topList.innerHTML = '';
+    if (top5.length === 0) {
+      topList.innerHTML = '<p style="font-size:0.82rem;color:var(--text-muted);text-align:center;padding:16px;">还没有数据</p>';
+    } else {
+      top5.forEach(([emotion, count]) => {
+        const barWidth = Math.round((count / maxCount) * 100);
+        const row = document.createElement('div');
+        row.className = 'top-emotion-row';
+        row.innerHTML = `
+          <span style="min-width:60px;font-weight:600;">${emotion}</span>
+          <div class="top-emotion-bar-bg"><div class="top-emotion-bar" style="width:${barWidth}%"></div></div>
+          <span class="top-emotion-count">${count}</span>
+        `;
+        topList.appendChild(row);
+      });
+    }
+
+    // Footer stats
+    updateFooterStats();
+  }
+
+  function updateFooterStats() {
+    if (entries.length === 0) {
+      footerStats.textContent = '还没有记录';
+    } else {
+      const count = entries.length;
+      const weeklyNow = new Date();
+      const ws = new Date(weeklyNow);
+      ws.setDate(weeklyNow.getDate() - weeklyNow.getDay());
+      ws.setHours(0,0,0,0);
+      const wc = entries.filter(e => e.timestamp >= ws.getTime()).length;
+      footerStats.textContent = `共 ${count} 条记录 · 本周 ${wc} 条`;
+    }
+  }
+
+  // ═══════════════════════════════════════════════
+  // WARM MESSAGES
+  // ═══════════════════════════════════════════════
+  const WARM_MESSAGES = {
+    positive: [
+      '今天的你做得很好，这些开心的瞬间值得被记住 🌟',
+      '看到你记录了这么多积极的情绪，真为你高兴！',
+      '快乐不是偶然的，是你选择了看见美好的事物 💛',
+      '你今天的光芒，照亮了自己的天空 ☀️',
+    ],
+    difficult: [
+      '辛苦的一天结束了。感受这些情绪本身，就是一种勇敢 🫂',
+      '你的感受都是真实的，也都是暂时的。明天会是新的一天 🌙',
+      '允许自己有不那么好的时候，这也是完整的一部分 🤍',
+      '你已经很努力了。现在，深呼吸，给自己一点温柔 🌿',
+    ],
+    mixed: [
+      '生活本来就是复杂多味的，你能同时感受到这些，说明你的觉察力在进步 🌈',
+      '又甜又苦，又爱又气——这才是真实的人生。谢谢你诚实地记录了自己 🎭',
+      '所有情绪都是信使，它们在告诉你一些重要的事 📬',
+    ],
+    weekly_start: [
+      '这一周的情绪旅程，让我为你梳理一下：',
+      '过去七天里，你的内心经历了许多风景：',
+      '一周过去了，来看看你的情绪地图 🗺️',
+    ],
+    weekly_end: [
+      '你的每一份记录，都是在和自己说：我值得被看见 💫',
+      '觉察是改变的第一步，而你正在这条路上稳步前行 🌱',
+      '无论这周是晴是雨，你都走过来了。下周，继续陪着你 🤗',
+      '情绪像天气一样变化，而你像大地一样承载着这一切 🌏',
+    ],
+    empty_daily: '今天还没有记录。去记录一下此刻的感受吧，哪怕只是简单的一句话 🌱',
+    empty_weekly: '本周还没有记录。没关系，觉察情绪是一辈子的练习，随时可以开始 🌿',
+  };
+
+  function pickRandom(arr) {
+    return arr[Math.floor(Math.random() * arr.length)];
+  }
+
+  // ═══════════════════════════════════════════════
+  // REPORT GENERATION
+  // ═══════════════════════════════════════════════
+  let reportPeriod = 'daily';
+
+  function renderReport() {
+    if (!tabReport.classList.contains('active')) return;
+    if (reportPeriod === 'daily') renderDailyReport();
+    else renderWeeklyReport();
+  }
+
+  // ── Daily Report ──────────────────────────────
+  function renderDailyReport() {
+    const now = new Date();
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    const todayEnd = todayStart + 86400000;
+    const todayEntries = entries.filter(e => e.timestamp >= todayStart && e.timestamp < todayEnd);
+
+    const dateStr = `${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日`;
+    const weekdays = ['日','一','二','三','四','五','六'];
+    const dateDisplay = `${dateStr} 星期${weekdays[now.getDay()]}`;
+
+    let html = `<div class="report-date">${dateDisplay}</div>`;
+
+    if (todayEntries.length === 0) {
+      html += `<div class="report-empty"><div class="icon">🌱</div><p>${WARM_MESSAGES.empty_daily}</p></div>`;
+      $('#reportContent').innerHTML = html;
+      return;
+    }
+
+    // Collect all emotions from today
+    const allEmotions = [];
+    todayEntries.forEach(entry => {
+      const ems = getEntryEmotions(entry);
+      ems.forEach(em => allEmotions.push(em));
+    });
+
+    // Emotion tags
+    html += `<div class="report-section"><h3>💭 今天感受到的情绪</h3><div class="report-emotion-tags">`;
+    const tagColors = ['#f59e0b','#10b981','#f97316','#06b6d4','#6366f1','#8b5cf6','#ef4444','#84cc16'];
+    allEmotions.forEach((em, i) => {
+      const cat = EMOTION_CATEGORIES.find(c => c.label === em.category);
+      const color = cat ? cat.color : tagColors[i % tagColors.length];
+      html += `<span class="report-emotion-tag" style="background:${color}">${cat?.emoji||''} ${em.specific||em.category}</span>`;
+    });
+    html += `</div></div>`;
+
+    // Body sensations
+    const sensations = [...new Set(todayEntries.map(e => e.bodySensation).filter(Boolean))];
+    if (sensations.length > 0) {
+      html += `<div class="report-section"><h3>🫀 身体信号</h3><p style="font-size:0.84rem;color:var(--text-secondary);">${sensations.join('、')}</p></div>`;
+    }
+
+    // Average intensity
+    if (allEmotions.length > 0) {
+      const avgInt = Math.round(allEmotions.reduce((s, e) => s + e.intensity, 0) / allEmotions.length);
+      html += `<div class="report-section"><h3>📊 平均强度</h3><p style="font-size:1.2rem;font-weight:700;color:var(--primary);">${avgInt}/10</p></div>`;
+    }
+
+    // Warm message based on emotion valence
+    const hasPositive = allEmotions.some(em => {
+      const cat = EMOTION_CATEGORIES.find(c => c.label === em.category);
+      return cat && (cat.valence === 'positive');
+    });
+    const hasNegative = allEmotions.some(em => {
+      const cat = EMOTION_CATEGORIES.find(c => c.label === em.category);
+      return cat && (cat.valence === 'negative');
+    });
+
+    let msg;
+    if (hasPositive && !hasNegative) msg = pickRandom(WARM_MESSAGES.positive);
+    else if (hasNegative && !hasPositive) msg = pickRandom(WARM_MESSAGES.difficult);
+    else msg = pickRandom(WARM_MESSAGES.mixed);
+
+    html += `<div class="report-message warm">${msg}</div>`;
+    html += `<p style="text-align:center;font-size:0.78rem;color:var(--text-muted);margin-top:12px;">今天共记录了 <b>${todayEntries.length}</b> 条</p>`;
+
+    $('#reportContent').innerHTML = html;
+  }
+
+  // ── Weekly Report ─────────────────────────────
+  function renderWeeklyReport() {
+    const now = new Date();
+    const dayOfWeek = now.getDay();
+    const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+    const monday = new Date(now.getFullYear(), now.getMonth(), now.getDate() + mondayOffset);
+    monday.setHours(0,0,0,0);
+    const sunday = new Date(monday);
+    sunday.setDate(sunday.getDate() + 6);
+    sunday.setHours(23,59,59,999);
+
+    const weekEntries = entries.filter(e => e.timestamp >= monday.getTime() && e.timestamp <= sunday.getTime());
+
+    const dateStr = `${monday.getMonth()+1}月${monday.getDate()}日 — ${sunday.getMonth()+1}月${sunday.getDate()}日`;
+    let html = `<div class="report-date">📅 ${dateStr}</div>`;
+
+    if (weekEntries.length === 0) {
+      html += `<div class="report-empty"><div class="icon">🌿</div><p>${WARM_MESSAGES.empty_weekly}</p></div>`;
+      $('#reportContent').innerHTML = html;
+      return;
+    }
+
+    // Weekly start message
+    html += `<div class="report-message">${pickRandom(WARM_MESSAGES.weekly_start)}</div>`;
+
+    // Count stats
+    html += `<div class="report-section"><h3>📊 概览</h3>`;
+    html += `<div style="display:flex;gap:16px;flex-wrap:wrap;">`;
+    html += `<div style="flex:1;min-width:80px;text-align:center;background:#f8fafc;border-radius:10px;padding:14px;"><div style="font-size:1.6rem;font-weight:800;color:var(--primary);">${weekEntries.length}</div><div style="font-size:0.75rem;color:var(--text-muted);">记录次数</div></div>`;
+
+    // Days with records
+    const daysWithRecords = new Set(weekEntries.map(e => {
+      const d = new Date(e.timestamp);
+      return `${d.getMonth()+1}/${d.getDate()}`;
+    })).size;
+    html += `<div style="flex:1;min-width:80px;text-align:center;background:#f8fafc;border-radius:10px;padding:14px;"><div style="font-size:1.6rem;font-weight:800;color:#10b981;">${daysWithRecords}</div><div style="font-size:0.75rem;color:var(--text-muted);">记录天数</div></div>`;
+
+    // Average intensity
+    const allEmotions = [];
+    weekEntries.forEach(entry => {
+      const ems = getEntryEmotions(entry);
+      ems.forEach(em => allEmotions.push(em));
+    });
+    if (allEmotions.length > 0) {
+      const avgInt = (allEmotions.reduce((s, e) => s + e.intensity, 0) / allEmotions.length).toFixed(1);
+      html += `<div style="flex:1;min-width:80px;text-align:center;background:#f8fafc;border-radius:10px;padding:14px;"><div style="font-size:1.6rem;font-weight:800;color:#f97316;">${avgInt}</div><div style="font-size:0.75rem;color:var(--text-muted);">平均强度</div></div>`;
+    }
+    html += `</div></div>`;
+
+    // Emotion frequency chart
+    const emotionFreq = {};
+    allEmotions.forEach(em => {
+      const key = em.specific || em.category;
+      emotionFreq[key] = (emotionFreq[key] || 0) + 1;
+    });
+    const sorted = Object.entries(emotionFreq).sort((a,b) => b[1] - a[1]);
+    const maxFreq = sorted[0] ? sorted[0][1] : 1;
+
+    if (sorted.length > 0) {
+      html += `<div class="report-section"><h3>🏷️ 情绪频次</h3>`;
+      const barColors = ['#6366f1','#8b5cf6','#a78bfa','#f59e0b','#10b981','#ef4444','#06b6d4','#f97316'];
+      sorted.forEach(([emotion, count], i) => {
+        const pct = Math.round((count / maxFreq) * 100);
+        const color = barColors[i % barColors.length];
+        html += `<div class="report-chart-row">
+          <span style="font-weight:600;min-width:55px;font-size:0.8rem;">${emotion}</span>
+          <div class="report-chart-bar-bg"><div class="report-chart-bar" style="width:${pct}%;background:${color};">${count}次</div></div>
+        </div>`;
+      });
+      html += `</div>`;
+    }
+
+    // Emotion valence distribution
+    const valenceCount = { positive: 0, negative: 0, neutral: 0 };
+    allEmotions.forEach(em => {
+      const cat = EMOTION_CATEGORIES.find(c => c.label === em.category);
+      if (cat && cat.valence) valenceCount[cat.valence] = (valenceCount[cat.valence] || 0) + 1;
+    });
+    const totalValence = valenceCount.positive + valenceCount.negative + valenceCount.neutral;
+    if (totalValence > 0) {
+      html += `<div class="report-section"><h3>⚖️ 情绪分布</h3>
+        <div style="display:flex;height:24px;border-radius:12px;overflow:hidden;gap:2px;">`;
+      if (valenceCount.positive > 0) {
+        const pp = Math.round((valenceCount.positive/totalValence)*100);
+        html += `<div style="width:${pp}%;background:#f59e0b;display:flex;align-items:center;justify-content:center;font-size:0.7rem;color:#fff;font-weight:700;">😊 ${pp}%</div>`;
+      }
+      if (valenceCount.neutral > 0) {
+        const np = Math.round((valenceCount.neutral/totalValence)*100);
+        html += `<div style="width:${np}%;background:#06b6d4;display:flex;align-items:center;justify-content:center;font-size:0.7rem;color:#fff;font-weight:700;">🤔 ${np}%</div>`;
+      }
+      if (valenceCount.negative > 0) {
+        const bp = Math.round((valenceCount.negative/totalValence)*100);
+        html += `<div style="width:${bp}%;background:#8b5cf6;display:flex;align-items:center;justify-content:center;font-size:0.7rem;color:#fff;font-weight:700;">😢 ${bp}%</div>`;
+      }
+      html += `</div></div>`;
+    }
+
+    // Body sensations
+    const allSensations = [...new Set(weekEntries.map(e => e.bodySensation).filter(Boolean))];
+    if (allSensations.length > 0) {
+      html += `<div class="report-section"><h3>🫀 本周身体信号</h3>
+        <p style="font-size:0.84rem;color:var(--text-secondary);">${allSensations.join('、')}</p></div>`;
+    }
+
+    // Warm closing messages
+    html += `<div class="report-message comfort">${pickRandom(WARM_MESSAGES.weekly_end)}</div>`;
+    html += `<div class="report-message warm">${pickRandom(WARM_MESSAGES.weekly_end)}</div>`;
+
+    html += `<p style="text-align:center;font-size:0.78rem;color:var(--text-muted);margin-top:12px;">本周共记录了 <b>${weekEntries.length}</b> 条情绪 · ${daysWithRecords} 天有记录</p>`;
+
+    $('#reportContent').innerHTML = html;
+  }
+
+  // ═══════════════════════════════════════════════
+  // TAB SWITCHING
+  // ═══════════════════════════════════════════════
+  tabBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const tab = btn.dataset.tab;
+      tabBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      // Hide all panels
+      tabRecord.style.display = 'none';
+      tabStats.classList.remove('active');
+      tabReport.classList.remove('active');
+      if (tab === 'record') {
+        tabRecord.style.display = '';
+      } else if (tab === 'stats') {
+        tabStats.classList.add('active');
+        renderStats();
+      } else if (tab === 'report') {
+        tabReport.classList.add('active');
+        renderReport();
+      }
+    });
+  });
+
+  // Report sub-tab toggle (daily/weekly)
+  const reportToggleBtns = $$('.report-toggle-btn');
+  reportToggleBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      reportPeriod = btn.dataset.period;
+      reportToggleBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      renderReport();
+    });
+  });
+
+  // ═══════════════════════════════════════════════
+  // EXPORT
+  // ═══════════════════════════════════════════════
+  $('#btnExport').addEventListener('click', () => {
+    if (entries.length === 0) {
+      showToast('还没有记录可以导出');
+      return;
+    }
+    const data = JSON.stringify(entries, null, 2);
+    const blob = new Blob([data], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `emotion-records-${new Date().toISOString().slice(0,10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('📥 数据已导出');
+  });
+
+  // ═══════════════════════════════════════════════
+  // RENDER ALL
+  // ═══════════════════════════════════════════════
+  function renderAll() {
+    renderTimeline();
+    updateFooterStats();
+    if (tabStats.classList.contains('active')) {
+      renderStats();
+    }
+    if (tabReport.classList.contains('active')) {
+      renderReport();
+    }
+  }
+
+  // ═══════════════════════════════════════════════
+  // EVENT LISTENERS
+  // ═══════════════════════════════════════════════
+  btnStartRecord.addEventListener('click', openModal);
+
+  // ═══════════════════════════════════════════════
+  // INIT
+  // ═══════════════════════════════════════════════
+  try {
+    loadEntries();
+    renderAll();
+    tabRecord.style.display = '';
+  } catch (e) {
+    document.body.innerHTML = '<div style="padding:40px;text-align:center;color:red;"><h2>加载失败</h2><p>' + e.message + '</p><p>请清除浏览器 localStorage 后重试</p><button onclick="localStorage.clear();location.reload()" style="padding:12px 24px;margin-top:12px;cursor:pointer;">清除数据并刷新</button></div>';
+  }
+
+})();
+</script>
+
+</body>
+</html>
+</html>

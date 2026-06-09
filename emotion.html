@@ -312,44 +312,26 @@
   }
   .delete-confirm-bar {
     display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 10px 14px;
-    margin-top: 8px;
-    margin-left: 56px;
-    background: #fef2f2;
-    border-radius: 8px;
-    border: 1px solid #fecaca;
-    font-size: 0.82rem;
-    color: var(--danger);
-    animation: fadeIn 0.2s ease;
-  }
-  .delete-confirm-bar span {
-    flex: 1;
-    font-weight: 600;
+    gap: 6px;
+    flex-shrink: 0;
   }
   .delete-confirm-bar button {
-    padding: 5px 14px;
+    padding: 4px 10px;
     border: none;
-    border-radius: 14px;
+    border-radius: 12px;
     cursor: pointer;
-    font-size: 0.78rem;
+    font-size: 0.75rem;
     font-weight: 600;
     transition: all var(--transition);
+    white-space: nowrap;
   }
   .delete-confirm-bar .confirm-no {
-    background: #e2e8f0;
+    background: #f1f5f9;
     color: var(--text-secondary);
-  }
-  .delete-confirm-bar .confirm-no:hover {
-    background: #cbd5e1;
   }
   .delete-confirm-bar .confirm-yes {
     background: var(--danger);
     color: #fff;
-  }
-  .delete-confirm-bar .confirm-yes:hover {
-    background: var(--danger-hover);
   }
 
   /* ── Stats panel ────────────────────────────── */
@@ -2116,22 +2098,18 @@
     const deleteBtn = item.querySelector('.entry-delete');
     deleteBtn.addEventListener('click', (e) => {
       e.stopPropagation();
-      // Show confirmation instead of immediate delete
-      if (item.classList.contains('confirming')) return;
-      item.classList.add('confirming');
-      const confirmBar = document.createElement('div');
+      // Replace trash icon with confirm buttons
+      const confirmBar = document.createElement('span');
       confirmBar.className = 'delete-confirm-bar';
       confirmBar.innerHTML = `
-        <span>确认删除？</span>
-        <button class="confirm-no">取消</button>
         <button class="confirm-yes">确认删除</button>
+        <button class="confirm-no">取消</button>
       `;
-      item.appendChild(confirmBar);
+      deleteBtn.replaceWith(confirmBar);
       // Cancel
       confirmBar.querySelector('.confirm-no').addEventListener('click', (ev) => {
         ev.stopPropagation();
-        item.classList.remove('confirming');
-        confirmBar.remove();
+        confirmBar.replaceWith(deleteBtn);
       });
       // Confirm delete
       confirmBar.querySelector('.confirm-yes').addEventListener('click', (ev) => {

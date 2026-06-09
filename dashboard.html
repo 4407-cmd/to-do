@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>📊 情绪统计面板</title>
+<style>
+  :root {
+    --bg-start: #1e1b4b;
+    --bg-end: #312e81;
+    --card-bg: #ffffff;
+    --primary: #6366f1;
+    --text: #1e293b;
+    --text-secondary: #64748b;
+    --text-muted: #94a3b8;
+    --border: #e2e8f0;
+    --shadow: 0 1px 3px rgba(0,0,0,0.08);
+    --shadow-lg: 0 8px 24px rgba(0,0,0,0.1);
+    --radius: 14px;
+    --radius-sm: 10px;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    background: linear-gradient(160deg, #1e1b4b 0%, #312e81 50%, #4338ca 100%);
+    background-attachment: fixed;
+    min-height: 100vh;
+    padding: 24px 16px 60px;
+    color: var(--text);
+  }
+  .app-container { max-width: 600px; margin: 0 auto; }
+  .header {
+    text-align: center;
+    margin-bottom: 24px;
+    color: #fff;
+  }
+  .header .icon { font-size: 2.5rem; margin-bottom: 4px; }
+  .header h1 { font-size: 1.6rem; font-weight: 700; }
+  .header .subtitle { font-size: 0.85rem; opacity: 0.7; margin-top: 4px; }
+  .refresh-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    color: rgba(255,255,255,0.7);
+    font-size: 0.8rem;
+  }
+  .btn-refresh {
+    padding: 6px 16px;
+    border: 1px solid rgba(255,255,255,0.3);
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 0.78rem;
+    color: #fff;
+    background: transparent;
+    transition: all 0.2s;
+  }
+  .btn-refresh:hover { background: rgba(255,255,255,0.1); }
+  .card {
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-lg);
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+  .card h2 {
+    font-size: 0.95rem;
+    font-weight: 700;
+    margin-bottom: 16px;
+    color: var(--text);
+  }
+  .stat-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 8px;
+  }
+  .stat-item {
+    text-align: center;
+    background: #f8fafc;
+    border-radius: var(--radius-sm);
+    padding: 16px 10px;
+  }
+  .stat-item .value {
+    font-size: 1.8rem;
+    font-weight: 800;
+    color: var(--primary);
+    line-height: 1.2;
+  }
+  .stat-item .label {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-top: 4px;
+  }
+  .emotion-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 0;
+    font-size: 0.85rem;
+  }
+  .emotion-row .rank {
+    width: 20px;
+    font-weight: 700;
+    color: var(--text-muted);
+  }
+  .emotion-row .label {
+    min-width: 52px;
+    font-weight: 600;
+  }
+  .bar-bg {
+    flex: 1;
+    height: 24px;
+    background: #f1f5f9;
+    border-radius: 6px;
+    overflow: hidden;
+  }
+  .bar {
+    height: 100%;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    padding-left: 8px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #fff;
+    min-width: fit-content;
+    transition: width 0.6s ease;
+  }
+  .bar .count { margin-left: auto; padding-right: 8px; }
+  .daily-list { max-height: 300px; overflow-y: auto; }
+  .daily-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.84rem;
+  }
+  .daily-item:last-child { border-bottom: none; }
+  .daily-date { color: var(--text-secondary); }
+  .daily-count { font-weight: 700; color: var(--primary); }
+  .loading {
+    text-align: center;
+    padding: 40px;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+  }
+  .error-msg {
+    text-align: center;
+    padding: 20px;
+    color: #ef4444;
+    font-size: 0.85rem;
+  }
+  .footer-note {
+    text-align: center;
+    color: rgba(255,255,255,0.5);
+    font-size: 0.75rem;
+    margin-top: 20px;
+  }
+  .btn-back {
+    display: inline-block;
+    padding: 8px 18px;
+    background: rgba(255,255,255,0.15);
+    color: #fff;
+    border-radius: 20px;
+    text-decoration: none;
+    font-size: 0.8rem;
+    margin-top: 8px;
+    transition: all 0.2s;
+  }
+  .btn-back:hover { background: rgba(255,255,255,0.25); }
+</style>
+</head>
+<body>
+
+<div class="app-container">
+  <header class="header">
+    <div class="icon">📊</div>
+    <h1>情绪统计面板</h1>
+    <p class="subtitle">匿名数据 · 实时更新</p>
+    <a class="btn-back" href="emotion.html">← 返回记录页</a>
+  </header>
+
+  <div class="refresh-bar">
+    <span id="lastUpdate">加载中...</span>
+    <button class="btn-refresh" onclick="loadAll()">🔄 刷新</button>
+  </div>
+
+  <!-- Overview cards -->
+  <div class="card">
+    <h2>📈 概览</h2>
+    <div class="stat-row">
+      <div class="stat-item">
+        <div class="value" id="totalRecords">-</div>
+        <div class="label">总记录次数</div>
+      </div>
+      <div class="stat-item">
+        <div class="value" id="totalUsers">-</div>
+        <div class="label">使用人数</div>
+      </div>
+      <div class="stat-item">
+        <div class="value" id="avgIntensity">-</div>
+        <div class="label">平均强度</div>
+      </div>
+    </div>
+    <div class="stat-row" style="grid-template-columns:1fr 1fr;">
+      <div class="stat-item">
+        <div class="value" id="todayRecords">-</div>
+        <div class="label">今日记录</div>
+      </div>
+      <div class="stat-item">
+        <div class="value" id="weekRecords">-</div>
+        <div class="label">本周记录</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Top emotions -->
+  <div class="card">
+    <h2>🏷️ 热门情绪 TOP 10</h2>
+    <div id="topEmotions"></div>
+  </div>
+
+  <!-- Daily trend -->
+  <div class="card">
+    <h2>📅 最近 7 天趋势</h2>
+    <div class="daily-list" id="dailyTrend"></div>
+  </div>
+
+  <p class="footer-note">
+    🔒 所有数据完全匿名，不包含任何个人信息<br>
+    点击「返回记录页」回到情绪记录小程序
+  </p>
+</div>
+
+<script>
+(function() {
+  'use strict';
+
+  const SUPABASE_URL = 'https://wyvttbdochvtjgwjqpzi.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable__URmGpmi3pahGI601HAyGw_jUtt3-j6';
+
+  async function supabaseQuery(path) {
+    const res = await fetch(SUPABASE_URL + path, {
+      headers: {
+        'apikey': SUPABASE_KEY,
+      },
+    });
+    if (!res.ok) throw new Error('查询失败: ' + res.status);
+    return res.json();
+  }
+
+  function formatDate(d) {
+    return `${d.getMonth()+1}/${d.getDate()}`;
+  }
+
+  async function loadAll() {
+    const now = new Date();
+    document.getElementById('lastUpdate').textContent = '加载中...';
+
+    try {
+      // Total records
+      const totalData = await supabaseQuery('/rest/v1/stats?select=count');
+      const total = totalData[0]?.count || 0;
+      document.getElementById('totalRecords').textContent = total;
+
+      // Unique users
+      const userData = await supabaseQuery('/rest/v1/stats?select=user_id');
+      const uniqueUsers = new Set(userData.map(r => r.user_id)).size;
+      document.getElementById('totalUsers').textContent = uniqueUsers;
+
+      // Average intensity
+      const intensityData = await supabaseQuery('/rest/v1/stats?select=intensity&intensity=not.is.null');
+      if (intensityData.length > 0) {
+        const avg = (intensityData.reduce((s, r) => s + r.intensity, 0) / intensityData.length).toFixed(1);
+        document.getElementById('avgIntensity').textContent = avg;
+      } else {
+        document.getElementById('avgIntensity').textContent = '-';
+      }
+
+      // Today's records
+      const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
+      const todayData = await supabaseQuery(`/rest/v1/stats?select=count&created_at=gte.${todayStart}`);
+      document.getElementById('todayRecords').textContent = todayData[0]?.count || 0;
+
+      // Week's records
+      const weekStart = new Date(now);
+      weekStart.setDate(now.getDate() - now.getDay());
+      weekStart.setHours(0,0,0,0);
+      const weekData = await supabaseQuery(`/rest/v1/stats?select=count&created_at=gte.${weekStart.toISOString()}`);
+      document.getElementById('weekRecords').textContent = weekData[0]?.count || 0;
+
+      // Top emotions (by specific word)
+      const allData = await supabaseQuery('/rest/v1/stats?select=emotion_specific,emotion_category&event_type=eq.record&emotion_specific=not.is.null');
+      const freq = {};
+      allData.forEach(r => {
+        const key = r.emotion_specific || r.emotion_category;
+        if (key) freq[key] = (freq[key] || 0) + 1;
+      });
+      const sorted = Object.entries(freq).sort((a,b) => b[1] - a[1]).slice(0, 10);
+      const maxFreq = sorted[0] ? sorted[0][1] : 1;
+      const barColors = ['#6366f1','#8b5cf6','#a78bfa','#f59e0b','#10b981','#ef4444','#06b6d4','#f97316','#ec4899','#14b8a6'];
+      let topHTML = '';
+      if (sorted.length === 0) {
+        topHTML = '<p style="text-align:center;color:var(--text-muted);padding:16px;">还没有数据</p>';
+      } else {
+        sorted.forEach(([emotion, count], i) => {
+          const pct = Math.round((count / maxFreq) * 100);
+          const color = barColors[i % barColors.length];
+          topHTML += `<div class="emotion-row">
+            <span class="rank">${i+1}</span>
+            <span class="label">${emotion}</span>
+            <div class="bar-bg"><div class="bar" style="width:${pct}%;background:${color};">${count}次</div></div>
+          </div>`;
+        });
+      }
+      document.getElementById('topEmotions').innerHTML = topHTML;
+
+      // Daily trend (last 7 days)
+      const sevenDaysAgo = new Date(now);
+      sevenDaysAgo.setDate(now.getDate() - 6);
+      sevenDaysAgo.setHours(0,0,0,0);
+      const trendData = await supabaseQuery(`/rest/v1/stats?select=created_at&created_at=gte.${sevenDaysAgo.toISOString()}&order=created_at.asc`);
+      const dailyCounts = {};
+      for (let i = 6; i >= 0; i--) {
+        const d = new Date(now);
+        d.setDate(now.getDate() - i);
+        const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+        dailyCounts[key] = { count: 0, label: formatDate(d) };
+      }
+      trendData.forEach(r => {
+        const d = new Date(r.created_at);
+        const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+        if (dailyCounts[key]) dailyCounts[key].count++;
+      });
+      const maxDaily = Math.max(1, ...Object.values(dailyCounts).map(d => d.count));
+      let trendHTML = '';
+      const weekdays = ['日','一','二','三','四','五','六'];
+      Object.entries(dailyCounts).forEach(([key, data]) => {
+        const d = new Date(key);
+        const wd = weekdays[d.getDay()];
+        const pct = data.count > 0 ? Math.round((data.count / maxDaily) * 100) : 0;
+        trendHTML += `<div class="daily-item">
+          <span class="daily-date">${data.label} 周${wd}</span>
+          <div class="bar-bg" style="width:120px;height:18px;"><div class="bar" style="width:${pct}%;background:var(--primary);font-size:0.65rem;">${data.count || ''}</div></div>
+          <span class="daily-count">${data.count}条</span>
+        </div>`;
+      });
+      document.getElementById('dailyTrend').innerHTML = trendHTML;
+
+      document.getElementById('lastUpdate').textContent = '更新于 ' + now.toLocaleTimeString('zh-CN', {hour:'2-digit',minute:'2-digit'});
+    } catch (e) {
+      document.getElementById('lastUpdate').textContent = '加载失败';
+      console.error('Dashboard error:', e);
+    }
+  }
+
+  // Auto-load & refresh every 60s
+  loadAll();
+  setInterval(loadAll, 60000);
+})();
+</script>
+
+</body>
+</html>

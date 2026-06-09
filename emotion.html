@@ -1453,6 +1453,39 @@
   }
 
   // ═══════════════════════════════════════════════
+  // ANONYMOUS STATS REPORTING
+  // ═══════════════════════════════════════════════
+  const SUPABASE_URL = 'https://wyvttbdochvtjgwjqpzi.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable__URmGpmi3pahGI601HAyGw_jUtt3-j6';
+
+  function getAnonUserId() {
+    let uid = localStorage.getItem('emotion-anon-user-id');
+    if (!uid) {
+      uid = 'u_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+      localStorage.setItem('emotion-anon-user-id', uid);
+    }
+    return uid;
+  }
+
+  function reportStats(eventType, data) {
+    fetch(SUPABASE_URL + '/rest/v1/stats', {
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_KEY,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal',
+      },
+      body: JSON.stringify({
+        event_type: eventType,
+        emotion_category: data.category || null,
+        emotion_specific: data.specific || null,
+        intensity: data.intensity || null,
+        user_id: getAnonUserId(),
+      }),
+    }).catch(() => {});
+  }
+
+  // ═══════════════════════════════════════════════
   // TOAST
   // ═══════════════════════════════════════════════
   let toastTimer;
@@ -1880,6 +1913,7 @@
         freeText: true,
       });
       saveEntries();
+      reportStats('free_text', {});
       closeModal();
       renderAll();
       showToast('✅ 已保存！每一次觉察都是进步');
@@ -1914,6 +1948,10 @@
     });
 
     saveEntries();
+    // Report to anonymous stats
+    emotions.forEach(em => {
+      reportStats('record', { category: em.category, specific: em.specific, intensity: em.intensity });
+    });
     closeModal();
     renderAll();
     showToast('✅ 已保存！你越来越了解自己了');

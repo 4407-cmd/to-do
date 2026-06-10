@@ -1367,8 +1367,8 @@
 <!-- Nickname Setup Modal -->
 <div class="modal-overlay hidden" id="nicknameOverlay">
   <div class="nickname-modal">
-    <h2>👋 欢迎来到情绪记录</h2>
-    <p>取一个昵称，让朋友们认识你吧</p>
+    <h2 id="nicknameTitle">👋 欢迎来到情绪记录</h2>
+    <p id="nicknameDesc">取一个昵称，让朋友们认识你吧</p>
     <input type="text" id="nicknameInput" placeholder="输入你的昵称..." maxlength="20" autocomplete="off">
     <br>
     <button class="btn-confirm" id="btnNicknameConfirm">开始记录</button>
@@ -2983,8 +2983,24 @@
   const nicknameInput = $('#nicknameInput');
   const btnNicknameConfirm = $('#btnNicknameConfirm');
   const headerSubtitle = document.querySelector('.header .subtitle');
+  const nicknameTitle = $('#nicknameTitle');
+  const nicknameDesc = $('#nicknameDesc');
+  let nicknameEditing = false;
 
-  function showNicknameModal() {
+  function showNicknameModal(editing) {
+    nicknameEditing = !!editing;
+    if (nicknameEditing) {
+      nicknameTitle.textContent = '✏️ 修改昵称';
+      nicknameDesc.textContent = '输入新的昵称';
+      nicknameInput.value = myNickname;
+      btnNicknameConfirm.textContent = '保存';
+      nicknameInput.select();
+    } else {
+      nicknameTitle.textContent = '👋 欢迎来到情绪记录';
+      nicknameDesc.textContent = '取一个昵称，让朋友们认识你吧';
+      nicknameInput.value = '';
+      btnNicknameConfirm.textContent = '开始记录';
+    }
     nicknameOverlay.classList.remove('hidden');
     nicknameInput.focus();
   }
@@ -3002,8 +3018,20 @@
     myNickname = name;
     updateHeaderNickname();
     hideNicknameModal();
-    // Try cloud save (don't block on failure)
-    try { await supabasePost('profiles', { user_id: userId, nickname: name }); } catch(e) {}
+    // Try cloud save (upsert)
+    try {
+      await supabasePost('profiles', { user_id: userId, nickname: name });
+    } catch(e) {}
+  }
+
+  // Make header nickname clickable to edit
+  if (headerSubtitle) {
+    headerSubtitle.style.cursor = 'pointer';
+    headerSubtitle.title = '点击修改昵称';
+    headerSubtitle.addEventListener('click', () => {
+      if (myNickname) showNicknameModal(true);
+    });
+  }
   }
 
   function updateHeaderNickname() {

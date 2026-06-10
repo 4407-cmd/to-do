@@ -400,6 +400,115 @@
     text-align: right;
   }
 
+  /* ── Friends panel ─────────────────────────── */
+  .friends-panel {
+    padding: 20px 24px;
+    display: none;
+  }
+  .friends-panel.active {
+    display: block;
+  }
+  .friend-search {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  .friend-search input {
+    flex: 1;
+    padding: 10px 14px;
+    border: 2px solid var(--border);
+    border-radius: 22px;
+    font-size: 0.88rem;
+    outline: none;
+    font-family: inherit;
+  }
+  .friend-search input:focus {
+    border-color: var(--primary);
+  }
+  .btn-search {
+    width: 42px;
+    height: 42px;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 1rem;
+    background: var(--primary);
+    color: #fff;
+    flex-shrink: 0;
+  }
+  .friend-section {
+    margin-bottom: 16px;
+  }
+  .friend-section h3 {
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+    font-weight: 700;
+  }
+  .friend-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    background: #f8fafc;
+    border-radius: 10px;
+    margin-bottom: 6px;
+    font-size: 0.85rem;
+  }
+  .friend-item .name {
+    flex: 1;
+    font-weight: 600;
+  }
+  .friend-item .remark {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+  }
+  .friend-item button {
+    padding: 5px 12px;
+    border: none;
+    border-radius: 14px;
+    cursor: pointer;
+    font-size: 0.75rem;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .friend-item .btn-accept {
+    background: var(--success);
+    color: #fff;
+  }
+  .friend-item .btn-reject {
+    background: #e2e8f0;
+    color: var(--text-secondary);
+  }
+  .friend-item .btn-view {
+    background: var(--primary-light);
+    color: var(--primary);
+  }
+  .friend-item .btn-remark {
+    background: #f1f5f9;
+    color: var(--text-secondary);
+  }
+  .friend-item .btn-add {
+    background: var(--primary);
+    color: #fff;
+  }
+  .search-result-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    background: #f0fdf4;
+    border-radius: 10px;
+    margin-bottom: 6px;
+    font-size: 0.85rem;
+  }
+  .friend-empty {
+    text-align: center;
+    padding: 20px;
+    color: var(--text-muted);
+    font-size: 0.82rem;
+  }
+
   /* ── Report panel ──────────────────────────── */
   .report-panel {
     padding: 20px 24px;
@@ -1129,6 +1238,7 @@
   <div class="tab-bar">
     <button class="tab-btn active" data-tab="record">📝 记录</button>
     <button class="tab-btn" data-tab="stats">📊 统计</button>
+    <button class="tab-btn" data-tab="friends">👥 好友</button>
     <button class="tab-btn" data-tab="report">📋 报告</button>
   </div>
 
@@ -1173,6 +1283,17 @@
         <h3>📋 情绪出现频次 TOP 5</h3>
         <div id="topEmotionsList"></div>
       </div>
+    </div>
+
+    <!-- Friends tab content -->
+    <div class="friends-panel" id="tab-friends">
+      <div class="friend-search">
+        <input type="text" id="friendSearchInput" placeholder="搜索昵称添加好友..." maxlength="20" autocomplete="off">
+        <button class="btn-search" id="btnFriendSearch">🔍</button>
+      </div>
+      <div id="friendSearchResult"></div>
+      <div class="friend-section" id="friendRequests"></div>
+      <div class="friend-section" id="friendList"></div>
     </div>
 
     <!-- Report tab content -->
@@ -1455,6 +1576,7 @@
   const tabRecord = $('#tab-record');
   const tabStats = $('#tab-stats');
   const tabReport = $('#tab-report');
+  const tabFriends = $('#tab-friends');
 
   // ═══════════════════════════════════════════════
   // STATE
@@ -2601,6 +2723,131 @@
   }
 
   // ═══════════════════════════════════════════════
+  // FRIENDS
+  // ═══════════════════════════════════════════════
+  async function renderFriends() {
+    if (!tabFriends.classList.contains('active')) return;
+    const userId = getAnonUserId();
+    if (!myNickname) { $('#friendList').innerHTML = '<div class="friend-empty">请先设置昵称</div>'; return; }
+
+    // Load pending requests (to me)
+    let requestsHTML = '<h3>📨 好友请求</h3>';
+    try {
+      const requests = await supabaseGet('/rest/v1/friendships?select=*,from_user_profile:profiles!friendships_from_user_fkey(nickname)&to_user=eq.' + userId + '&status=eq.pending');
+      if (requests && requests.length > 0) {
+        requests.forEach(r => {
+          const fromNick = r.from_user_profile?.nickname || r.from_user;
+          requestsHTML += `<div class="friend-item">
+            <span class="name">${fromNick}</span>
+            <button class="btn-accept" data-from="${r.from_user}">接受</button>
+            <button class="btn-reject" data-from="${r.from_user}">拒绝</button>
+          </div>`;
+        });
+      } else {
+        requestsHTML += '<div class="friend-empty">暂无好友请求</div>';
+      }
+    } catch (e) { requestsHTML += '<div class="friend-empty">加载失败</div>'; }
+    $('#friendRequests').innerHTML = requestsHTML;
+
+    // Bind accept/reject buttons
+    $$('#friendRequests .btn-accept').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        await supabasePatch('friendships', 'from_user=eq.' + btn.dataset.from + '&to_user=eq.' + userId, { status: 'accepted' });
+        renderFriends();
+      });
+    });
+    $$('#friendRequests .btn-reject').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        // Delete the friendship request
+        await fetch(SUPABASE_URL + '/rest/v1/friendships?from_user=eq.' + btn.dataset.from + '&to_user=eq.' + userId, {
+          method: 'DELETE',
+          headers: { 'apikey': SUPABASE_KEY },
+        });
+        renderFriends();
+      });
+    });
+
+    // Load accepted friends (both directions)
+    let friendsHTML = '<h3>👥 我的好友</h3>';
+    try {
+      const sent = await supabaseGet('/rest/v1/friendships?select=*,to_user_profile:profiles!friendships_to_user_fkey(nickname)&from_user=eq.' + userId + '&status=eq.accepted');
+      const received = await supabaseGet('/rest/v1/friendships?select=*,from_user_profile:profiles!friendships_from_user_fkey(nickname)&to_user=eq.' + userId + '&status=eq.accepted');
+      const all = [...(sent||[]), ...(received||[])];
+      if (all.length > 0) {
+        all.forEach(f => {
+          const isFromMe = f.from_user === userId;
+          const friendId = isFromMe ? f.to_user : f.from_user;
+          const friendNick = isFromMe ? (f.to_user_profile?.nickname || friendId) : (f.from_user_profile?.nickname || friendId);
+          const remark = f.remark || '';
+          friendsHTML += `<div class="friend-item">
+            <span class="name">${friendNick}</span>
+            ${remark ? `<span class="remark">(${remark})</span>` : ''}
+            <button class="btn-remark" data-fid="${f.id}" data-remark="${remark}">✏️备注</button>
+          </div>`;
+        });
+      } else {
+        friendsHTML += '<div class="friend-empty">还没有好友，用上方搜索添加吧</div>';
+      }
+    } catch (e) { friendsHTML += '<div class="friend-empty">加载失败</div>'; }
+    $('#friendList').innerHTML = friendsHTML;
+
+    // Bind remark buttons
+    $$('#friendList .btn-remark').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const newRemark = prompt('输入好友备注：', btn.dataset.remark || '');
+        if (newRemark === null) return; // cancelled
+        const fid = parseInt(btn.dataset.fid);
+        await supabasePatch('friendships', 'id=eq.' + fid, { remark: newRemark });
+        renderFriends();
+      });
+    });
+  }
+
+  // Friend search
+  $('#btnFriendSearch').addEventListener('click', searchFriends);
+  $('#friendSearchInput').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') searchFriends();
+  });
+
+  async function searchFriends() {
+    const query = $('#friendSearchInput').value.trim();
+    if (!query || !myNickname) return;
+    const userId = getAnonUserId();
+    const container = $('#friendSearchResult');
+    container.innerHTML = '<div style="text-align:center;padding:10px;color:var(--text-muted);">搜索中...</div>';
+    try {
+      const results = await supabaseGet('/rest/v1/profiles?select=*&nickname=ilike.%25' + encodeURIComponent(query) + '%25&user_id=neq.' + userId + '&limit=10');
+      if (!results || results.length === 0) {
+        container.innerHTML = '<div class="friend-empty">未找到用户</div>';
+        return;
+      }
+      let html = '<h3 style="font-size:0.82rem;color:var(--text-secondary);margin-bottom:8px;">🔍 搜索结果</h3>';
+      results.forEach(r => {
+        html += `<div class="search-result-item">
+          <span class="name">${r.nickname}</span>
+          <button class="btn-add" data-uid="${r.user_id}">加好友</button>
+        </div>`;
+      });
+      container.innerHTML = html;
+      // Bind add buttons
+      $$('#friendSearchResult .btn-add').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          try {
+            await supabasePost('friendships', { from_user: userId, to_user: btn.dataset.uid, status: 'pending' });
+            btn.textContent = '已发送';
+            btn.disabled = true;
+            btn.style.opacity = '0.5';
+          } catch (e) {
+            btn.textContent = '失败';
+          }
+        });
+      });
+    } catch (e) {
+      container.innerHTML = '<div class="friend-empty">搜索失败</div>';
+    }
+  }
+
+  // ═══════════════════════════════════════════════
   // TAB SWITCHING
   // ═══════════════════════════════════════════════
   tabBtns.forEach(btn => {
@@ -2612,11 +2859,15 @@
       tabRecord.style.display = 'none';
       tabStats.classList.remove('active');
       tabReport.classList.remove('active');
+      tabFriends.classList.remove('active');
       if (tab === 'record') {
         tabRecord.style.display = '';
       } else if (tab === 'stats') {
         tabStats.classList.add('active');
         renderStats();
+      } else if (tab === 'friends') {
+        tabFriends.classList.add('active');
+        renderFriends();
       } else if (tab === 'report') {
         tabReport.classList.add('active');
         renderReport();

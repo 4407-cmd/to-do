@@ -2997,13 +2997,13 @@
     const userId = getAnonUserId();
     name = name.trim();
     if (!name || name.length < 1) return;
-    // Save to Supabase
-    await supabasePost('profiles', { user_id: userId, nickname: name });
-    // Save locally
+    // Always save locally first
     localStorage.setItem('emotion-nickname', name);
     myNickname = name;
     updateHeaderNickname();
     hideNicknameModal();
+    // Try cloud save (don't block on failure)
+    try { await supabasePost('profiles', { user_id: userId, nickname: name }); } catch(e) {}
   }
 
   function updateHeaderNickname() {

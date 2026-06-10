@@ -3032,6 +3032,10 @@
       if (myNickname) showNicknameModal(true);
     });
   }
+  // Close nickname modal on backdrop click
+  nicknameOverlay.addEventListener('click', (e) => {
+    if (e.target === nicknameOverlay) hideNicknameModal();
+  });
 
   function updateHeaderNickname() {
     if (myNickname && headerSubtitle) {

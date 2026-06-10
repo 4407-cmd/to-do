@@ -3032,7 +3032,7 @@
       if (myNickname) {
         updateHeaderNickname();
       } else {
-        // Try loading from Supabase
+        // Try loading from Supabase (once, don't block on failure)
         try {
           const userId = getAnonUserId();
           const profiles = await supabaseGet('/rest/v1/profiles?select=nickname&user_id=eq.' + userId);
@@ -3041,10 +3041,11 @@
             localStorage.setItem('emotion-nickname', myNickname);
             updateHeaderNickname();
           } else {
+            // First visit ever — show nickname modal
             showNicknameModal();
           }
         } catch (e) {
-          showNicknameModal();
+          // Supabase unreachable, skip modal, don't bother user
         }
       }
     } catch (e) {

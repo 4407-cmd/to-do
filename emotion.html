@@ -572,6 +572,56 @@
   .modal-overlay.hidden {
     display: none;
   }
+
+  /* ── Nickname setup modal ──────────────────── */
+  .nickname-modal {
+    background: #fff;
+    border-radius: var(--radius);
+    width: 90%;
+    max-width: 360px;
+    padding: 28px 24px;
+    text-align: center;
+    box-shadow: var(--shadow-xl);
+    animation: slideUp 0.3s ease;
+  }
+  .nickname-modal h2 {
+    font-size: 1.2rem;
+    margin-bottom: 6px;
+  }
+  .nickname-modal p {
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    margin-bottom: 18px;
+  }
+  .nickname-modal input {
+    width: 100%;
+    padding: 12px 14px;
+    border: 2px solid var(--border);
+    border-radius: var(--radius-xs);
+    font-size: 1rem;
+    outline: none;
+    text-align: center;
+    margin-bottom: 16px;
+    font-family: inherit;
+  }
+  .nickname-modal input:focus {
+    border-color: var(--primary);
+  }
+  .nickname-modal .btn-confirm {
+    padding: 12px 32px;
+    border: none;
+    border-radius: 50px;
+    cursor: pointer;
+    font-size: 0.95rem;
+    font-weight: 700;
+    background: var(--primary);
+    color: #fff;
+    transition: all var(--transition);
+  }
+  .nickname-modal .btn-confirm:hover {
+    background: var(--primary-hover);
+  }
+
   @keyframes overlayIn {
     from { opacity: 0; }
     to { opacity: 1; }
@@ -1155,6 +1205,17 @@
   </div>
 </div>
 
+<!-- Nickname Setup Modal -->
+<div class="modal-overlay" id="nicknameOverlay">
+  <div class="nickname-modal">
+    <h2>👋 欢迎来到情绪记录</h2>
+    <p>取一个昵称，让朋友们认识你吧</p>
+    <input type="text" id="nicknameInput" placeholder="输入你的昵称..." maxlength="20" autocomplete="off">
+    <br>
+    <button class="btn-confirm" id="btnNicknameConfirm">开始记录</button>
+  </div>
+</div>
+
 <!-- Toast -->
 <div class="toast" id="toast"></div>
 
@@ -1412,54 +1473,45 @@
   // ═══════════════════════════════════════════════
   // PERSISTENCE
   // ═══════════════════════════════════════════════
-  function loadEntries() {
+  async function loadEntries() {
+    // 1. Load from localStorage
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) {
         entries = JSON.parse(raw);
         if (!Array.isArray(entries)) entries = [];
-        // Migrate old single-emotion format to new multi-emotion format
-        let migrated = false;
-        entries = entries.map(entry => {
-          if (entry.emotions) return entry; // Already new format
-          if (entry.freeText) {
-            // Migrate old freeText entry
-            migrated = true;
-            return {
-              id: entry.id,
-              timestamp: entry.timestamp,
-              bodySensation: entry.bodySensation || null,
-              emotions: [],
-              context: entry.context || null,
-              notes: entry.notes || null,
-              freeText: true,
-            };
-          }
-          // Migrate old structured entry
-          migrated = true;
-          return {
-            id: entry.id,
-            timestamp: entry.timestamp,
-            bodySensation: entry.bodySensation || null,
-            emotions: [{
-              category: entry.emotionCategory || null,
-              specific: entry.emotionSpecific || null,
-              intensity: entry.intensity || 5,
-            }],
-            context: entry.context || null,
-            notes: entry.notes || null,
-            freeText: false,
-          };
-        });
-        if (migrated) {
-          saveEntries();
-        }
       } else {
         entries = [];
       }
     } catch (e) {
       entries = [];
-      showToast('⚠️ 数据读取异常，已重置');
+    }
+
+    // 2. Load from Supabase and merge
+    const userId = getAnonUserId();
+    try {
+      const moods = await supabaseGet('/rest/v1/moods?select=*&user_id=eq.' + userId + '&order=created_at.desc&limit=500');
+      if (moods && moods.length > 0) {
+        const localIds = new Set(entries.map(e => e.id));
+        moods.forEach(m => {
+          if (!localIds.has('sb_' + m.id)) {
+            entries.push({
+              id: 'sb_' + m.id,
+              timestamp: new Date(m.created_at).getTime(),
+              bodySensation: m.body_sensation,
+              emotions: m.emotions || [],
+              context: m.context,
+              notes: m.notes,
+              freeText: false,
+              visibleToFriends: m.visible_to_friends,
+              fromCloud: true,
+            });
+          }
+        });
+        entries.sort((a, b) => b.timestamp - a.timestamp);
+      }
+    } catch (e) {
+      console.error('Cloud sync skipped:', e.message);
     }
   }
 
@@ -1506,6 +1558,43 @@
         user_id: getAnonUserId(),
       }),
     }).catch(() => {});
+  }
+
+  // Supabase helpers
+  async function supabaseGet(path) {
+    const res = await fetch(SUPABASE_URL + path, {
+      headers: { 'apikey': SUPABASE_KEY },
+    });
+    if (!res.ok) throw new Error(res.status);
+    return res.json();
+  }
+
+  async function supabasePost(table, body) {
+    const res = await fetch(SUPABASE_URL + '/rest/v1/' + table, {
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_KEY,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=representation',
+      },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) { console.error('supabasePost error:', res.status, table); return null; }
+    return res.json();
+  }
+
+  async function supabasePatch(table, query, body) {
+    const res = await fetch(SUPABASE_URL + '/rest/v1/' + table + '?' + query, {
+      method: 'PATCH',
+      headers: {
+        'apikey': SUPABASE_KEY,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal',
+      },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) { console.error('supabasePatch error:', res.status); return false; }
+    return true;
   }
 
   // ═══════════════════════════════════════════════
@@ -1971,6 +2060,16 @@
     });
 
     saveEntries();
+    // Save to Supabase
+    const userId = getAnonUserId();
+    supabasePost('moods', {
+      user_id: userId,
+      body_sensation: sensation?.label || null,
+      emotions: emotions,
+      context: contextVal,
+      notes: notesVal,
+      visible_to_friends: false,
+    });
     // Report to anonymous stats
     emotions.forEach(em => {
       reportStats('record', { category: em.category, specific: em.specific, intensity: em.intensity });
@@ -2572,22 +2671,84 @@
   // ═══════════════════════════════════════════════
   // EVENT LISTENERS
   // ═══════════════════════════════════════════════
+  // NICKNAME SETUP
+  // ═══════════════════════════════════════════════
+  let myNickname = localStorage.getItem('emotion-nickname') || '';
+  const nicknameOverlay = $('#nicknameOverlay');
+  const nicknameInput = $('#nicknameInput');
+  const btnNicknameConfirm = $('#btnNicknameConfirm');
+  const headerSubtitle = document.querySelector('.header .subtitle');
+
+  function showNicknameModal() {
+    nicknameOverlay.classList.remove('hidden');
+    nicknameInput.focus();
+  }
+
+  function hideNicknameModal() {
+    nicknameOverlay.classList.add('hidden');
+  }
+
+  async function setupNickname(name) {
+    const userId = getAnonUserId();
+    name = name.trim();
+    if (!name || name.length < 1) return;
+    // Save to Supabase
+    await supabasePost('profiles', { user_id: userId, nickname: name });
+    // Save locally
+    localStorage.setItem('emotion-nickname', name);
+    myNickname = name;
+    updateHeaderNickname();
+    hideNicknameModal();
+  }
+
+  function updateHeaderNickname() {
+    if (myNickname && headerSubtitle) {
+      headerSubtitle.textContent = '👤 ' + myNickname + ' · 觉察你的内心天气';
+    }
+  }
+
+  btnNicknameConfirm.addEventListener('click', () => setupNickname(nicknameInput.value));
+  nicknameInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') setupNickname(nicknameInput.value);
+  });
+
+  // ═══════════════════════════════════════════════
   btnStartRecord.addEventListener('click', openModal);
 
   // ═══════════════════════════════════════════════
   // INIT
   // ═══════════════════════════════════════════════
-  try {
-    loadEntries();
-    renderAll();
-    tabRecord.style.display = '';
-  } catch (e) {
-    document.body.innerHTML = '<div style="padding:40px;text-align:center;color:red;"><h2>加载失败</h2><p>' + e.message + '</p><p>请清除浏览器 localStorage 后重试</p><button onclick="localStorage.clear();location.reload()" style="padding:12px 24px;margin-top:12px;cursor:pointer;">清除数据并刷新</button></div>';
-  }
+  (async function() {
+    try {
+      await loadEntries();
+      renderAll();
+      tabRecord.style.display = '';
+      // Check nickname
+      if (myNickname) {
+        updateHeaderNickname();
+      } else {
+        // Try loading from Supabase
+        try {
+          const userId = getAnonUserId();
+          const profiles = await supabaseGet('/rest/v1/profiles?select=nickname&user_id=eq.' + userId);
+          if (profiles && profiles.length > 0) {
+            myNickname = profiles[0].nickname;
+            localStorage.setItem('emotion-nickname', myNickname);
+            updateHeaderNickname();
+          } else {
+            showNicknameModal();
+          }
+        } catch (e) {
+          showNicknameModal();
+        }
+      }
+    } catch (e) {
+      document.body.innerHTML = '<div style="padding:40px;text-align:center;color:red;"><h2>加载失败</h2><p>' + e.message + '</p><button onclick="localStorage.clear();location.reload()" style="padding:12px 24px;margin-top:12px;cursor:pointer;">清除数据并刷新</button></div>';
+    }
+  })();
 
 })();
 </script>
 
 </body>
-</html>
 </html>
